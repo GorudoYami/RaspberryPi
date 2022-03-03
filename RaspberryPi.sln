@@ -1,0 +1,51 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32210.238
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryServer", "RaspberryServer\RaspberryServer.csproj", "{EE02A93F-AD09-41CC-8BCC-367CA1D0A8E4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryClient", "RaspberryClient\RaspberryClient.csproj", "{A8800CB6-5AEC-4619-B936-06DAD81C983A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryCommon", "RaspberryCommon\RaspberryCommon.csproj", "{C8A50C49-209B-444E-8B15-A0BAE411FE22}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EE02A93F-AD09-41CC-8BCC-367CA1D0A8E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE02A93F-AD09-41CC-8BCC-367CA1D0A8E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE02A93F-AD09-41CC-8BCC-367CA1D0A8E4}.Debug|x64.ActiveCfg = Debug|x64
+		{EE02A93F-AD09-41CC-8BCC-367CA1D0A8E4}.Debug|x64.Build.0 = Debug|x64
+		{EE02A93F-AD09-41CC-8BCC-367CA1D0A8E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE02A93F-AD09-41CC-8BCC-367CA1D0A8E4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE02A93F-AD09-41CC-8BCC-367CA1D0A8E4}.Release|x64.ActiveCfg = Release|ARM64
+		{EE02A93F-AD09-41CC-8BCC-367CA1D0A8E4}.Release|x64.Build.0 = Release|ARM64
+		{A8800CB6-5AEC-4619-B936-06DAD81C983A}.Debug|Any CPU.ActiveCfg = Debug|ARM64
+		{A8800CB6-5AEC-4619-B936-06DAD81C983A}.Debug|Any CPU.Build.0 = Debug|ARM64
+		{A8800CB6-5AEC-4619-B936-06DAD81C983A}.Debug|x64.ActiveCfg = Debug|ARM64
+		{A8800CB6-5AEC-4619-B936-06DAD81C983A}.Debug|x64.Build.0 = Debug|ARM64
+		{A8800CB6-5AEC-4619-B936-06DAD81C983A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A8800CB6-5AEC-4619-B936-06DAD81C983A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A8800CB6-5AEC-4619-B936-06DAD81C983A}.Release|x64.ActiveCfg = Release|ARM64
+		{A8800CB6-5AEC-4619-B936-06DAD81C983A}.Release|x64.Build.0 = Release|ARM64
+		{C8A50C49-209B-444E-8B15-A0BAE411FE22}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C8A50C49-209B-444E-8B15-A0BAE411FE22}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C8A50C49-209B-444E-8B15-A0BAE411FE22}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C8A50C49-209B-444E-8B15-A0BAE411FE22}.Debug|x64.Build.0 = Debug|Any CPU
+		{C8A50C49-209B-444E-8B15-A0BAE411FE22}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C8A50C49-209B-444E-8B15-A0BAE411FE22}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C8A50C49-209B-444E-8B15-A0BAE411FE22}.Release|x64.ActiveCfg = Release|Any CPU
+		{C8A50C49-209B-444E-8B15-A0BAE411FE22}.Release|x64.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {05E0FE84-CDEB-4056-BE83-86645B030CAA}
+	EndGlobalSection
+EndGlobal

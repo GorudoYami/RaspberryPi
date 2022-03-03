@@ -1,19 +1,19 @@
 ﻿using System;
 
-namespace RaspberryServer {
-    class Program {
-        static void Main(string[] args) {
-            Console.WriteLine("Testing...");
-            Server server = new("localhost", 6666);
+namespace RaspberryPi;
 
-            Console.WriteLine("Starting...");
-            server.Start();
-            Console.WriteLine("Done!");
-            Console.ReadKey();
-            Console.WriteLine("Stopping...");
-            server.Stop();
-            Console.WriteLine("Done!");
-            Console.ReadKey();
-        }
-    }
+class Program {
+	static void Main(string[] args) {
+		Console.WriteLine("Testing...");
+		RaspberryServer server = new("localhost", 6666);
+
+		Console.WriteLine("Starting...");
+		server.Start();
+		Console.WriteLine("Done!");
+		Console.ReadKey();
+		Console.WriteLine("Stopping...");
+		server.StopAsync();
+		Console.WriteLine("Done!");
+		Console.ReadKey();
+	}
 }
