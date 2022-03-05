@@ -4,16 +4,21 @@ namespace RaspberryPi;
 
 class Program {
 	static void Main(string[] args) {
-		Console.WriteLine("Testing...");
-		RaspberryServer server = new("localhost", 6666);
+		using RaspberryServer server = new("localhost", 6969);
 
-		Console.WriteLine("Starting...");
+		Console.WriteLine("Starting server...");
 		server.Start();
-		Console.WriteLine("Done!");
+		Console.WriteLine("Done");
+
+		Console.WriteLine("Starting client...");
+
+
 		Console.ReadKey();
+
 		Console.WriteLine("Stopping...");
 		server.StopAsync();
-		Console.WriteLine("Done!");
+		Console.WriteLine("Done");
+
 		Console.ReadKey();
 	}
 }

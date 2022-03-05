@@ -12,7 +12,7 @@ using Timer = System.Timers.Timer;
 
 namespace RaspberryPi;
 
-public class RaspberryServer {
+public class RaspberryServer : IDisposable {
 	public string Hostname { get; set; }
 	public IPAddress Address { get; set; }
 	public int Port { get; set; }
@@ -88,33 +88,38 @@ public class RaspberryServer {
 	}
 
 	private async Task<Aes> InitializeCommunicationAsync(TcpClient client) {
-		client.ReceiveTimeout = 15;
-		client.SendTimeout = 15;
+		client.ReceiveTimeout = 15000;
+		client.SendTimeout = 15000;
 
 		using RSA rsa = RSA.Create(KeySizes.RSA_KEY_SIZE);
 
-		// Send server public key
-		if (!await TcpUtils.SendUnencryptedAsync(client, rsa.ExportRSAPublicKey(), TokenSource.Token))
-			return null;
-
 		// Receive client public key
 		byte[] buffer = await TcpUtils.ReceiveUnencryptedAsync(client, TokenSource.Token);
-		if (buffer is null)
+		if (buffer is null || buffer.Length < KeySizes.RSA_KEY_SIZE / 8)
 			return null;
 
+		// Import client public key
 		rsa.ImportRSAPublicKey(buffer, out int bytesRead);
 		if (bytesRead != buffer.Length)
 			return null;
 
-		Aes aes = CryptoUtils.GenerateAes();
+		Aes clientAes = CryptoUtils.CreateAes();
 
-		// Send encrypted AES key with RSA
-		if (!await TcpUtils.SendUnencryptedAsync(client, rsa.Encrypt(aes.Key, RSAEncryptionPadding.OaepSHA512), TokenSource.Token))
+		// Send encrypted AES key and IV with RSA
+		if (!await TcpUtils.SendUnencryptedAsync(client, rsa.Encrypt(clientAes.Key, RSAEncryptionPadding.OaepSHA512), TokenSource.Token))
+			return null;
+
+		if (!await TcpUtils.SendUnencryptedAsync(client, rsa.Encrypt(clientAes.IV, RSAEncryptionPadding.OaepSHA512), TokenSource.Token))
 			return null;
 
 		// Receive secret application token
 		buffer = await TcpUtils.ReceiveAsync(client, Clients[client], TokenSource.Token);
 
-		return Encoding.ASCII.GetString(buffer) != ApplicationToken ? null : aes;
+		return Encoding.ASCII.GetString(buffer) != ApplicationToken ? null : clientAes;
+	}
+
+	public void Dispose() {
+		StopAsync();
+		GC.SuppressFinalize(this);
 	}
 }

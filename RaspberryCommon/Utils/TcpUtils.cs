@@ -64,11 +64,11 @@ public static class TcpUtils {
 		return Encoding.ASCII.GetBytes(data);
 	}
 
-	public static async Task<bool> SendAsync(TcpClient client, Aes clientAes, byte[] data, CancellationToken token) {
+	public static async Task<bool> SendAsync(TcpClient client, Aes aes, byte[] data, CancellationToken token) {
 		try {
 			using var stream = client.GetStream();
 
-			await stream.WriteAsync(CryptoUtils.EncryptData(data, clientAes), token);
+			await stream.WriteAsync(CryptoUtils.EncryptData(data, aes), token);
 			await stream.WriteAsync(Encoding.ASCII.GetBytes("\r\n"), token);
 		}
 		catch (Exception ex) {
@@ -79,7 +79,7 @@ public static class TcpUtils {
 		return true;
 	}
 
-	public static async Task<byte[]> ReceiveAsync(TcpClient client, Aes clientAes, CancellationToken token) {
+	public static async Task<byte[]> ReceiveAsync(TcpClient client, Aes aes, CancellationToken token) {
 		string data = string.Empty;
 		byte[] buffer = new byte[1024];
 
@@ -111,6 +111,6 @@ public static class TcpUtils {
 		// Remove last 2 characters ("\r\n")
 		data = data[0..^2];
 
-		return CryptoUtils.DecryptData(Encoding.ASCII.GetBytes(data), clientAes);
+		return CryptoUtils.DecryptData(Encoding.ASCII.GetBytes(data), aes);
 	}
 }

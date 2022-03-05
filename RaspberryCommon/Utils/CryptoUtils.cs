@@ -41,11 +41,19 @@ public static class CryptoUtils {
 		return result;
 	}
 
-	public static Aes GenerateAes() {
+	public static Aes CreateAes() {
 		Aes aes = Aes.Create();
 		aes.KeySize = KeySizes.AES_KEY_SIZE;
 		aes.GenerateKey();
 		aes.GenerateIV();
+		return aes;
+	}
+
+	public static Aes CreateAes(byte[] key, byte[] iv) {
+		Aes aes = Aes.Create();
+		aes.KeySize = KeySizes.AES_KEY_SIZE;
+		aes.Key = key;
+		aes.IV = iv;
 		return aes;
 	}
 }
