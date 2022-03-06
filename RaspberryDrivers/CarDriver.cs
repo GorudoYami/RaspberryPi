@@ -1,38 +1,44 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Device.Gpio;
-using System.Timers;
+using System.Device.Pwm;
+using System.Linq;
+using RaspberryPi.Drivers;
 using RaspberryPi.Drivers.Enums;
 
-namespace RaspberryPi.Driver {
+namespace RaspberryPi.Drivers {
 	public class CarDriver : IDisposable {
 		public int TurnPower { get; private set; }
 		public int DrivePower { get; private set; }
 		public Direction? TurnDirection { get; private set; }
 		public Direction? DriveDirection { get; private set; }
 		public bool IsMoving { get; private set; }
-		public Dictionary<int, PinMode> PinsUsed { get; private set; }
+		public List<CarDriverPin> Pins { get; private set; }
+		public List<CarDriverPwmPin> PwmPins { get; private set;}
 
 		private GpioController Controller { get; set; }
 
-		public CarDriver(Dictionary<int, PinMode> pins) {
+		public CarDriver(List<CarDriverPin> pins, List<CarDriverPwmPin> pwmPins) {
 			TurnPower = 0;
 			DriveDirection = null;
 			IsMoving = false;
-			Controller = new GpioController();
-			InitializePins(pins);
+			InitializePins(pins, pwmPins);
 		}
 
-		private void InitializePins(Dictionary<int, PinMode> pins) {
-			PinsUsed = pins;
+		private void InitializePins(List<CarDriverPin> pins, List<CarDriverPwmPin> pwmPins) {
+			Pins = pins;
 
-			foreach (var pin in PinsUsed)
-				Controller.OpenPin(pin.Key, pin.Value);
+			foreach (var pin in Pins) {
+				Controller.OpenPin(pin.Key, pin.Mode);
+				pin.Open = true;
+			}
 		}
 
 		private void DeinitializePins() {
-			foreach (var pin in PinsUsed)
+			foreach (var pin in Pins) {
 				Controller.ClosePin(pin.Key);
+				pin.Open = false;
+			}
 		}
 
 		public void Left(int power = 50) {
@@ -68,7 +74,10 @@ namespace RaspberryPi.Driver {
 		}
 
 		private void Update() {
-
+			if (TurnDirection is not null) {
+				CarDriverPin pin = Pins.Find(p => p.BoundDirection == TurnDirection);
+				Controller.Write(pin.Key, PinValue.High);
+			}
 		}
 
 		public void Dispose() {
