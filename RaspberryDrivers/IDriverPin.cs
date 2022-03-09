@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RaspberryPi.Drivers.Enums;
+using System;
 using System.Collections.Generic;
 using System.Device.Gpio;
 using System.Linq;
@@ -10,5 +11,6 @@ namespace RaspberryPi.Drivers {
 		public int Key { get; set; }
 		public PinMode Mode { get; set; }
 		public bool Open { get; set; }
+		public Direction BoundDirection { get; set; }
 	}
 }
