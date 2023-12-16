@@ -14,26 +14,28 @@ namespace RaspberryPi;
 public class RaspberryClient : IDisposable {
 	public string ServerHostname { get; set; }
 	public int ServerPort { get; set; }
-	public ConcurrentQueue<byte[]> DataQueue { get; private set; }
 
-	private TcpClient Client { get; set; }
+	private TcpClient Server { get; set; }
 	private CancellationTokenSource TokenSource { get; set; }
 	private Aes ServerAes { get; set; }
 	private string ApplicationToken { get; set; }
 	private Timer KeepAliveTimer { get; set; }
 	private Task MainTask { get; set; }
+	private ConcurrentQueue<byte[]> ReceiveDataQueue { get; set; }
+	private ConcurrentQueue<byte[]> SendDataQueue { get; set; }
 
 	public RaspberryClient(string serverHostname, int serverPort) {
 		ServerHostname = serverHostname;
 		ServerPort = serverPort;
-		Client = new TcpClient();
+		Server = new TcpClient();
 		ApplicationToken = "xxxxxxx";
 		KeepAliveTimer = new Timer(30 * 1000);
 		KeepAliveTimer.Elapsed += KeepAlivePing;
+		DataQueue = new ConcurrentQueue<byte[]>();
 	}
 
 	public async Task<bool> Connect(int timeout = 15) {
-		if (Client?.Connected is true)
+		if (Server?.Connected is true)
 			return false;
 
 		TokenSource = new CancellationTokenSource();
@@ -44,7 +46,7 @@ public class RaspberryClient : IDisposable {
 
 		try {
 			timer.Start();
-			await Client.ConnectAsync(ServerHostname, ServerPort, TokenSource.Token);
+			await Server.ConnectAsync(ServerHostname, ServerPort, TokenSource.Token);
 
 			if (!await InitializeCommunicationAsync())
 				return false;
@@ -61,21 +63,21 @@ public class RaspberryClient : IDisposable {
 	}
 
 	private async Task<bool> InitializeCommunicationAsync() {
-		Client.ReceiveTimeout = 15000;
-		Client.SendTimeout = 15000;
+		Server.ReceiveTimeout = 15000;
+		Server.SendTimeout = 15000;
 
 		using RSA rsa = RSA.Create(KeySizes.RSA_KEY_SIZE);
 
 		// Send client public key
-		if (!await TcpUtils.SendUnencryptedAsync(Client, rsa.ExportRSAPublicKey(), TokenSource.Token))
+		if (!await TcpUtils.SendUnencryptedAsync(Server, rsa.ExportRSAPublicKey(), TokenSource.Token))
 			return false;
 
 		// Receive AES key and IV with RSA
-		byte[] key = await TcpUtils.ReceiveUnencryptedAsync(Client, TokenSource.Token);
+		byte[] key = await TcpUtils.ReceiveUnencryptedAsync(Server, TokenSource.Token);
 		if (key is null || key.Length < KeySizes.AES_KEY_SIZE / 8)
 			return false;
 
-		byte[] iv = await TcpUtils.ReceiveUnencryptedAsync(Client, TokenSource.Token);
+		byte[] iv = await TcpUtils.ReceiveUnencryptedAsync(Server, TokenSource.Token);
 		if (iv is null || iv.Length == 0)
 			return false;
 
@@ -85,11 +87,11 @@ public class RaspberryClient : IDisposable {
 		ServerAes = CryptoUtils.CreateAes(key, iv);
 
 		// Send secret application token
-		return await TcpUtils.SendAsync(Client, ServerAes, Encoding.ASCII.GetBytes(ApplicationToken), TokenSource.Token);
+		return await TcpUtils.SendAsync(Server, ServerAes, Encoding.ASCII.GetBytes(ApplicationToken), TokenSource.Token);
 	}
 
 	private async void KeepAlivePing(object sender, EventArgs e) {
-		bool pingSent = await TcpUtils.SendAsync(Client, ServerAes, Encoding.ASCII.GetBytes("ping"), TokenSource.Token);
+		bool pingSent = await TcpUtils.SendAsync(Server, ServerAes, Encoding.ASCII.GetBytes("ping"), TokenSource.Token);
 
 		if (!pingSent && !TokenSource.Token.IsCancellationRequested) {
 			KeepAliveTimer.Enabled = false;
@@ -99,25 +101,33 @@ public class RaspberryClient : IDisposable {
 
 	private async void DataQueueLoop(CancellationToken token) {
 		while (!token.IsCancellationRequested) {
-			byte[] data = await TcpUtils.ReceiveAsync(Client, ServerAes, token);
+			byte[] data = await TcpUtils.ReceiveAsync(Server, ServerAes, token);
 			if (data is not null && data.Length > 0)
-				DataQueue.Enqueue(data);
+				ReceiveDataQueue.Enqueue(data);
+
+			if (SendDataQueue.TryDequeue(out data)) {
+				bool result = await TcpUtils.SendAsync(Server, ServerAes, data, TokenSource.Token);
+				if (!result)
+					Disconnect();
+			}
 		}
 	}
+
+	public
 
 	public async void Disconnect() {
 		TokenSource.Cancel();
 		KeepAliveTimer.Stop();
 		await MainTask;
-		Client.Close();
+		Server.Close();
 		TokenSource.Dispose();
 	}
 
 	public void Dispose() {
-		if (Client != null && Client.Connected)
+		if (Server != null && Server.Connected)
 			Disconnect();
 
-		Client.Dispose();
+		Server.Dispose();
 		GC.SuppressFinalize(this);
 	}
 }
