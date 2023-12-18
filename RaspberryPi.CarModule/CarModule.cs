@@ -1,40 +1,43 @@
-﻿using RaspberryPi.CarModule.Enums;
+﻿using GorudoYami.Common.Modules;
+using Microsoft.Extensions.Options;
+using RaspberryPi.CarModule.Enums;
 using RaspberryPi.CarModule.Models;
-using RaspberryPi.Common.Interfaces;
 using System.Device.Gpio;
 using System.Device.Pwm;
+using System.Linq;
 
 namespace RaspberryPi.CarModule;
 
-public class CarModule : IRaspberryPiModule, IDisposable {
-	public int TurnPower { get; private set; }
-	public int DrivePower { get; private set; }
-	public Direction? TurnDirection { get; private set; }
-	public Direction? DriveDirection { get; private set; }
-	public bool IsMoving { get; private set; }
-	public List<IDriverPin> Pins { get; private set; }
+public class CarModule : IModule, IDisposable {
+	private readonly List<IDriverPin> _pins;
+	private int _turnPower;
+	private int _drivePower;
+	private Direction? _turnDirection;
+	private Direction? _driveDirection;
+
 	private GpioController Controller { get; set; }
 	private Dictionary<Direction, PwmChannel> PwmChannels { get; set; }
 
-	public CarModule(List<IDriverPin> pins) {
-		TurnPower = 0;
-		DrivePower = 0;
-		TurnDirection = null;
-		DriveDirection = null;
-		IsMoving = false;
-		Pins = pins;
+	public CarModule(IOptions<CarModuleOptions> options) {
+		_pins = options.Value.Pins.ToList();
+		_turnPower = 0;
+		_drivePower = 0;
+		_turnDirection = null;
+		_driveDirection = null;
 		Controller = new GpioController();
 		PwmChannels = new Dictionary<Direction, PwmChannel>();
 
-		if (!ValidatePins())
-			throw new ArgumentException("Pin list does not contain a pin for every direction", nameof(pins));
-
+		ValidatePins();
 		InitializePins();
 	}
 
 	private bool ValidatePins() {
+		bool missingDirectionPins = Enum.GetValues<Direction>()
+			.Except(_pins.Select(x => x.BoundDirection), EqualityComparer<Direction>.Default)
+			.Any();
+
 		foreach (var direction in Enum.GetValues<Direction>()) {
-			if (!Pins.Exists(p => p.BoundDirection == direction))
+			if (_pins.Exists(p => p.BoundDirection == direction) == false)
 				return false;
 		}
 
