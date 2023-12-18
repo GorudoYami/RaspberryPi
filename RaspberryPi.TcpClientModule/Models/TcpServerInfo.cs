@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RaspberryPi.Common.Interfaces;
-
-public interface IRaspberryPiModule {
-}
+namespace RaspberryPi.TcpClientModule.Models;

@@ -1,129 +1,154 @@
-﻿using GorudoYami.Common.Attributes;
-using System.Collections.Concurrent;
+﻿using GorudoYami.Common.Asynchronous;
+using GorudoYami.Common.Cryptography;
+using GorudoYami.Common.Modules;
+using GorudoYami.Common.Streams;
+using Microsoft.Extensions.Options;
+using RaspberryPi.Common.Utilities;
+using RaspberryPi.Modules.Models;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
-using Timer = System.Timers.Timer;
 
 namespace RaspberryPi.Modules;
 
-[WorkInProgress]
-[Obsolete("Tragiczny kod do poprawy")]
-public class TcpClientModule : IDisposable {
-	public string ServerHostname { get; set; }
-	public int ServerPort { get; set; }
+public interface ITcpClientModule : IModule, IDisposable, IAsyncDisposable {
+	Task<bool> ConnectAsync();
+	Task DisconnectAsync();
+	Task ReadAsync(CancellationToken cancellationToken = default);
+	Task ReadLineAsync(CancellationToken cancellationToken = default);
+	Task SendAsync(byte[] data, CancellationToken cancellationToken = default);
+	Task SendAsync(string data, CancellationToken cancellationToken = default);
+}
 
-	private TcpClient Server { get; set; }
-	private CancellationTokenSource TokenSource { get; set; }
-	private Aes ServerAes { get; set; }
-	private string ApplicationToken { get; set; }
-	private Timer KeepAliveTimer { get; set; }
-	private Task MainTask { get; set; }
-	private ConcurrentQueue<byte[]> ReceiveDataQueue { get; set; }
-	private ConcurrentQueue<byte[]> SendDataQueue { get; set; }
+public class TcpClientModule : ITcpClientModule {
+	private CancellationToken Token => _cancellationTokenProvider.GetToken();
+	private readonly ICancellationTokenProvider _cancellationTokenProvider;
+	private readonly TcpClientOptions _options;
 
-	public TcpClientModule(string serverHostname, int serverPort) {
-		ServerHostname = serverHostname;
-		ServerPort = serverPort;
-		Server = new TcpClient();
-		ApplicationToken = "xxxxxxx";
-		KeepAliveTimer = new Timer(30 * 1000);
-		KeepAliveTimer.Elapsed += KeepAlivePing;
-		DataQueue = new ConcurrentQueue<byte[]>();
+	private TcpClient? _server;
+	private Aes? _serverAes;
+	private CryptoStreamReaderWriter? _serverReaderWriter;
+	private ByteStreamReader? _serverUnencryptedReader;
+
+	public TcpClientModule(IOptions<TcpClientOptions> options, ICancellationTokenProvider cancellationTokenProvider) {
+		_options = options.Value;
+		_cancellationTokenProvider = cancellationTokenProvider;
+		_server = new TcpClient() {
+			ReceiveTimeout = _options.TimeoutSeconds * 1000,
+			SendTimeout = _options.TimeoutSeconds * 1000,
+		};
 	}
 
-	public async Task<bool> Connect(int timeout = 15) {
-		if (Server?.Connected is true)
-			return false;
-
-		TokenSource = new CancellationTokenSource();
-
-		using var timer = new Timer(timeout * 1000);
-
-		timer.Elapsed += (s, e) => TokenSource.Cancel();
-
-		try {
-			timer.Start();
-			await Server.ConnectAsync(ServerHostname, ServerPort, TokenSource.Token);
-
-			if (!await InitializeCommunicationAsync())
-				return false;
-
-			KeepAliveTimer.Start();
-			MainTask = Task.Run(() => DataQueueLoop(TokenSource.Token), TokenSource.Token);
-		}
-		catch (Exception ex) {
-			Console.WriteLine(ex.ToString());
-			return false;
+	public async Task<bool> ConnectAsync() {
+		if (_server?.Connected == true) {
+			await DisconnectAsync();
 		}
 
-		return true;
+		_server = new TcpClient() {
+			ReceiveTimeout = _options.TimeoutSeconds * 1000,
+			SendTimeout = _options.TimeoutSeconds * 1000,
+		};
+
+		Task timeoutTask = Task.Delay(_options.TimeoutSeconds, Token);
+		Task connectTask = _server.ConnectAsync(_options.ServerHost, _options.ServerPort);
+		await Task.WhenAny(timeoutTask, connectTask);
+
+		return _server.Connected && await InitializeCommunicationAsync();
 	}
 
 	private async Task<bool> InitializeCommunicationAsync() {
-		Server.ReceiveTimeout = 15000;
-		Server.SendTimeout = 15000;
+		var serverStream = _server!.GetStream();
+		_serverUnencryptedReader = new ByteStreamReader(serverStream, true);
 
-		using RSA rsa = RSA.Create(KeySizes.RSA_KEY_SIZE);
+		using RSA rsa = RSA.Create(CryptographyKeySizes.RsaKeySizeBits);
 
-		// Send client public key
-		if (!await TcpUtils.SendUnencryptedAsync(Server, rsa.ExportRSAPublicKey(), TokenSource.Token))
-			return false;
+		await serverStream.WriteAsync(rsa.ExportRSAPublicKey(), Token);
+		await serverStream.WriteAsync(Encoding.ASCII.GetBytes("\r\n"), Token);
 
-		// Receive AES key and IV with RSA
-		byte[] key = await TcpUtils.ReceiveUnencryptedAsync(Server, TokenSource.Token);
-		if (key is null || key.Length < KeySizes.AES_KEY_SIZE / 8)
-			return false;
+		bool result = false;
+		try {
+			_serverAes = Aes.Create();
+			_serverAes.KeySize = CryptographyKeySizes.AesKeySizeBits;
 
-		byte[] iv = await TcpUtils.ReceiveUnencryptedAsync(Server, TokenSource.Token);
-		if (iv is null || iv.Length == 0)
-			return false;
+			byte[] data = await _serverUnencryptedReader.ReadMessageAsync(Token);
+			if (data.Length != CryptographyKeySizes.AesKeySizeBits / 8) {
+				return false;
+			}
+			_serverAes.Key = rsa.Decrypt(data, RSAEncryptionPadding.OaepSHA512);
 
-		key = rsa.Decrypt(key, RSAEncryptionPadding.OaepSHA512);
-		iv = rsa.Decrypt(iv, RSAEncryptionPadding.OaepSHA512);
+			data = await _serverUnencryptedReader.ReadMessageAsync(Token);
+			if (data.Length != CryptographyKeySizes.AesIvSizeBits / 8) {
+				return false;
+			}
+			_serverAes.IV = rsa.Decrypt(data, RSAEncryptionPadding.OaepSHA512);
 
-		ServerAes = CryptoUtils.CreateAes(key, iv);
+			_serverReaderWriter = new CryptoStreamReaderWriter(_serverAes.CreateEncryptor(), _serverAes.CreateDecryptor(), serverStream);
+			await _serverReaderWriter.WriteLineAsync("OK", Token);
 
-		// Send secret application token
-		return await TcpUtils.SendAsync(Server, ServerAes, Encoding.ASCII.GetBytes(ApplicationToken), TokenSource.Token);
-	}
-
-	private async void KeepAlivePing(object sender, EventArgs e) {
-		bool pingSent = await TcpUtils.SendAsync(Server, ServerAes, Encoding.ASCII.GetBytes("ping"), TokenSource.Token);
-
-		if (!pingSent && !TokenSource.Token.IsCancellationRequested) {
-			KeepAliveTimer.Enabled = false;
-			Disconnect();
+			result = true;
+			return result;
 		}
-	}
-
-	private async void DataQueueLoop(CancellationToken token) {
-		while (!token.IsCancellationRequested) {
-			byte[] data = await TcpUtils.ReceiveAsync(Server, ServerAes, token);
-			if (data is not null && data.Length > 0)
-				ReceiveDataQueue.Enqueue(data);
-
-			if (SendDataQueue.TryDequeue(out data)) {
-				bool result = await TcpUtils.SendAsync(Server, ServerAes, data, TokenSource.Token);
-				if (!result)
-					Disconnect();
+		finally {
+			if (result == false) {
+				await DisconnectAsync();
 			}
 		}
 	}
 
-	public async void Disconnect() {
-		TokenSource.Cancel();
-		KeepAliveTimer.Stop();
-		await MainTask;
-		Server.Close();
-		TokenSource.Dispose();
+	public async Task SendAsync(
+		byte[] data,
+		CancellationToken cancellationToken = default) {
+		AssertConnected();
+		await _serverReaderWriter!.WriteMessageAsync(data, cancellationToken);
+	}
+
+	public async Task SendAsync(
+		string data,
+		CancellationToken cancellationToken = default) {
+		AssertConnected();
+		await _serverReaderWriter!.WriteLineAsync(data, cancellationToken);
+	}
+
+	public async Task ReadLineAsync(CancellationToken cancellationToken = default) {
+		AssertConnected();
+		await _serverReaderWriter!.ReadLineAsync(cancellationToken);
+	}
+
+	public async Task ReadAsync(CancellationToken cancellationToken = default) {
+		AssertConnected();
+		await _serverReaderWriter!.ReadMessageAsync(cancellationToken);
+	}
+
+	private void AssertConnected() {
+		if (_server == null) {
+			throw new InvalidOperationException("Not connected to a server");
+		}
+	}
+
+	public async Task DisconnectAsync() {
+		if (_serverUnencryptedReader != null) {
+			await _serverUnencryptedReader.DisposeAsync();
+			_serverUnencryptedReader = null;
+		}
+
+		if (_serverReaderWriter != null) {
+			await _serverReaderWriter.DisposeAsync();
+			_serverReaderWriter = null;
+		}
+
+		_serverAes?.Dispose();
+		_serverAes = null;
+		_server?.Dispose();
+		_server = null;
 	}
 
 	public void Dispose() {
-		if (Server != null && Server.Connected)
-			Disconnect();
-
-		Server.Dispose();
 		GC.SuppressFinalize(this);
+		DisconnectAsync().GetAwaiter().GetResult();
+	}
+
+	public async ValueTask DisposeAsync() {
+		GC.SuppressFinalize(this);
+		await DisconnectAsync();
 	}
 }

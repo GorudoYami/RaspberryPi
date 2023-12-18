@@ -4,26 +4,26 @@ using System.Net.Sockets;
 namespace RaspberryPi.Modules.Models;
 
 public class TcpClientInfo : IDisposable, IAsyncDisposable {
-	public NetworkStream NetworkStream => TcpClient.GetStream();
 	public TcpClient TcpClient { get; }
-	public CryptoStreamReaderWriter IO { get; }
+	public CryptoStreamReaderWriter ReaderWriter { get; }
+	public NetworkStream Stream => TcpClient.GetStream();
 
-	public TcpClientInfo(TcpClient client, CryptoStreamReaderWriter io) {
+	public TcpClientInfo(TcpClient client, CryptoStreamReaderWriter readerWriter) {
 		TcpClient = client;
-		IO = io;
+		ReaderWriter = readerWriter;
 	}
 
 	public void Dispose() {
 		GC.SuppressFinalize(this);
 
-		IO.Dispose();
+		ReaderWriter.Dispose();
 		TcpClient.Dispose();
 	}
 
 	public async ValueTask DisposeAsync() {
 		GC.SuppressFinalize(this);
 
-		await IO.DisposeAsync();
+		await ReaderWriter.DisposeAsync();
 		TcpClient.Dispose();
 	}
 }
