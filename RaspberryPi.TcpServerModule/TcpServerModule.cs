@@ -24,18 +24,18 @@ public interface ITcpServerModule : IModule {
 public class TcpServerModule : ITcpServerModule, IDisposable, IAsyncDisposable {
 	private readonly Dictionary<IPAddress, TcpClientInfo> _clients;
 	private readonly TcpListener _listener;
-	private readonly ICancellationTokenProvider _cancellationTokenProvider;
+	private CancellationTokenSource? _cancellationTokenSource;
 	private Task? _listenTask;
 
-	public TcpServerModule(IOptions<TcpServerModuleOptions> options, ICancellationTokenProvider cancellationTokenProvider) {
-		_cancellationTokenProvider = cancellationTokenProvider;
+	public TcpServerModule(IOptions<TcpServerModuleOptions> options) {
 		_clients = new Dictionary<IPAddress, TcpClientInfo>();
 		_listener = new TcpListener(Networking.GetAddressFromHostname(options.Value.Host), options.Value.Port);
 	}
 
 	public void Start() {
+		_cancellationTokenSource ??= new CancellationTokenSource();
 		_listener.Start();
-		_listenTask = ListenAsync(_cancellationTokenProvider.GetToken());
+		_listenTask = ListenAsync(_cancellationTokenSource.Token);
 	}
 
 	public async Task StopAsync() {
@@ -43,10 +43,14 @@ public class TcpServerModule : ITcpServerModule, IDisposable, IAsyncDisposable {
 			return;
 		}
 
-		_cancellationTokenProvider.Cancel();
-		_listener.Stop();
-		await _listenTask;
-		Cleanup();
+		try {
+			_cancellationTokenSource?.Cancel();
+			_listener.Stop();
+			await _listenTask;
+		}
+		finally {
+			Cleanup();
+		}
 	}
 
 	private void Cleanup() {
@@ -55,6 +59,8 @@ public class TcpServerModule : ITcpServerModule, IDisposable, IAsyncDisposable {
 		}
 
 		_clients.Clear();
+		_cancellationTokenSource?.Dispose();
+		_cancellationTokenSource = null;
 	}
 
 	private void CleanupClient(IPAddress address, bool remove = false) {
@@ -101,24 +107,24 @@ public class TcpServerModule : ITcpServerModule, IDisposable, IAsyncDisposable {
 		}
 	}
 
-	private async Task ListenAsync(CancellationToken token) {
-		while (!token.IsCancellationRequested) {
-			TcpClient client = await _listener.AcceptTcpClientAsync(token);
+	private async Task ListenAsync(CancellationToken cancellationToken) {
+		while (cancellationToken.IsCancellationRequested == false) {
+			TcpClient client = await _listener.AcceptTcpClientAsync(cancellationToken);
 			IPAddress clientAddress = (client.Client.RemoteEndPoint as IPEndPoint)?.Address
 				?? throw new InvalidOperationException("Client remote endpoint is invalid");
 
-			if (client.Connected && await InitializeCommunicationAsync(client, clientAddress) == false) {
+			if (client.Connected && await InitializeCommunicationAsync(client, clientAddress, cancellationToken) == false) {
 				CleanupClient(clientAddress, true);
 			}
 		}
 	}
 
-	private async Task<bool> InitializeCommunicationAsync(TcpClient client, IPAddress clientAddress) {
+	private async Task<bool> InitializeCommunicationAsync(TcpClient client, IPAddress clientAddress, CancellationToken cancellationToken) {
 		var clientStream = client.GetStream();
 		using var clientReader = new ByteStreamReader(clientStream, true);
 		using RSA rsa = RSA.Create(CryptographyKeySizes.RsaKeySizeBits);
 
-		byte[] data = await clientReader.ReadMessageAsync(cancellationToken: _cancellationTokenProvider.GetToken());
+		byte[] data = await clientReader.ReadMessageAsync(cancellationToken: cancellationToken);
 		if (data.Length != CryptographyKeySizes.RsaKeySizeBits / 8) {
 			return false;
 		}
@@ -135,12 +141,12 @@ public class TcpServerModule : ITcpServerModule, IDisposable, IAsyncDisposable {
 			aes = GetAes();
 
 			data = rsa.Encrypt(aes.Key, RSAEncryptionPadding.OaepSHA512);
-			await clientStream.WriteAsync(data, _cancellationTokenProvider.GetToken());
-			await clientStream.WriteAsync(Encoding.ASCII.GetBytes("\r\n"), _cancellationTokenProvider.GetToken());
+			await clientStream.WriteAsync(data, cancellationToken);
+			await clientStream.WriteAsync(Encoding.ASCII.GetBytes("\r\n"), cancellationToken);
 
 			data = rsa.Encrypt(aes.IV, RSAEncryptionPadding.OaepSHA512);
-			await clientStream.WriteAsync(data, _cancellationTokenProvider.GetToken());
-			await clientStream.WriteAsync(Encoding.ASCII.GetBytes("\r\n"), _cancellationTokenProvider.GetToken());
+			await clientStream.WriteAsync(data, cancellationToken);
+			await clientStream.WriteAsync(Encoding.ASCII.GetBytes("\r\n"), cancellationToken);
 
 			csrwClient = new CryptoStreamReaderWriter(aes.CreateEncryptor(), aes.CreateDecryptor(), clientStream);
 			if (await csrwClient.ReadLineAsync() == "OK") {

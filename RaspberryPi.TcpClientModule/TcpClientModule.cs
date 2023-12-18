@@ -12,7 +12,7 @@ using System.Text;
 namespace RaspberryPi.Modules;
 
 public interface ITcpClientModule : IModule, IDisposable, IAsyncDisposable {
-	Task<bool> ConnectAsync();
+	Task<bool> ConnectAsync(CancellationToken cancellationToken = default);
 	Task DisconnectAsync();
 	Task ReadAsync(CancellationToken cancellationToken = default);
 	Task ReadLineAsync(CancellationToken cancellationToken = default);
@@ -21,8 +21,6 @@ public interface ITcpClientModule : IModule, IDisposable, IAsyncDisposable {
 }
 
 public class TcpClientModule : ITcpClientModule {
-	private CancellationToken Token => _cancellationTokenProvider.GetToken();
-	private readonly ICancellationTokenProvider _cancellationTokenProvider;
 	private readonly TcpClientOptions _options;
 
 	private TcpClient? _server;
@@ -30,16 +28,15 @@ public class TcpClientModule : ITcpClientModule {
 	private CryptoStreamReaderWriter? _serverReaderWriter;
 	private ByteStreamReader? _serverUnencryptedReader;
 
-	public TcpClientModule(IOptions<TcpClientOptions> options, ICancellationTokenProvider cancellationTokenProvider) {
+	public TcpClientModule(IOptions<TcpClientOptions> options) {
 		_options = options.Value;
-		_cancellationTokenProvider = cancellationTokenProvider;
 		_server = new TcpClient() {
 			ReceiveTimeout = _options.TimeoutSeconds * 1000,
 			SendTimeout = _options.TimeoutSeconds * 1000,
 		};
 	}
 
-	public async Task<bool> ConnectAsync() {
+	public async Task<bool> ConnectAsync(CancellationToken cancellationToken = default) {
 		if (_server?.Connected == true) {
 			await DisconnectAsync();
 		}
@@ -49,41 +46,41 @@ public class TcpClientModule : ITcpClientModule {
 			SendTimeout = _options.TimeoutSeconds * 1000,
 		};
 
-		Task timeoutTask = Task.Delay(_options.TimeoutSeconds, Token);
+		Task timeoutTask = Task.Delay(_options.TimeoutSeconds, cancellationToken);
 		Task connectTask = _server.ConnectAsync(_options.ServerHost, _options.ServerPort);
 		await Task.WhenAny(timeoutTask, connectTask);
 
-		return _server.Connected && await InitializeCommunicationAsync();
+		return _server.Connected && await InitializeCommunicationAsync(cancellationToken);
 	}
 
-	private async Task<bool> InitializeCommunicationAsync() {
+	private async Task<bool> InitializeCommunicationAsync(CancellationToken cancellationToken = default) {
 		var serverStream = _server!.GetStream();
 		_serverUnencryptedReader = new ByteStreamReader(serverStream, true);
 
 		using RSA rsa = RSA.Create(CryptographyKeySizes.RsaKeySizeBits);
 
-		await serverStream.WriteAsync(rsa.ExportRSAPublicKey(), Token);
-		await serverStream.WriteAsync(Encoding.ASCII.GetBytes("\r\n"), Token);
+		await serverStream.WriteAsync(rsa.ExportRSAPublicKey(), cancellationToken);
+		await serverStream.WriteAsync(Encoding.ASCII.GetBytes("\r\n"), cancellationToken);
 
 		bool result = false;
 		try {
 			_serverAes = Aes.Create();
 			_serverAes.KeySize = CryptographyKeySizes.AesKeySizeBits;
 
-			byte[] data = await _serverUnencryptedReader.ReadMessageAsync(Token);
+			byte[] data = await _serverUnencryptedReader.ReadMessageAsync(cancellationToken);
 			if (data.Length != CryptographyKeySizes.AesKeySizeBits / 8) {
 				return false;
 			}
 			_serverAes.Key = rsa.Decrypt(data, RSAEncryptionPadding.OaepSHA512);
 
-			data = await _serverUnencryptedReader.ReadMessageAsync(Token);
+			data = await _serverUnencryptedReader.ReadMessageAsync(cancellationToken);
 			if (data.Length != CryptographyKeySizes.AesIvSizeBits / 8) {
 				return false;
 			}
 			_serverAes.IV = rsa.Decrypt(data, RSAEncryptionPadding.OaepSHA512);
 
 			_serverReaderWriter = new CryptoStreamReaderWriter(_serverAes.CreateEncryptor(), _serverAes.CreateDecryptor(), serverStream);
-			await _serverReaderWriter.WriteLineAsync("OK", Token);
+			await _serverReaderWriter.WriteLineAsync("OK", cancellationToken);
 
 			result = true;
 			return result;
