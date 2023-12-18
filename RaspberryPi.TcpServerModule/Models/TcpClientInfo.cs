@@ -1,4 +1,4 @@
-﻿using GorudoYami.Common.Networking;
+﻿using GorudoYami.Common.Cryptography;
 using System.Net.Sockets;
 
 namespace RaspberryPi.Modules.Models;
