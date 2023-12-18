@@ -1,31 +1,43 @@
-﻿using GorudoYami.Common.Cryptography;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Sockets;
+﻿using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace RaspberryPi.TcpServerModule.Extensions;
 
 public static class TcpClientExtensions {
-	public static async Task<bool> SendAsync(
-		this TcpClient client,
-		byte[] data,
-		bool encrypt = true,
-		CancellationToken cancellationToken = default) {
 
+
+	public static async Task<byte[]> ReceiveAsync(TcpClient client, Aes aes, CancellationToken token) {
+		string data = string.Empty;
+		byte[] buffer = new byte[1024];
+
+		bool timedOut = false;
+		using var timer = new Timer(client.ReceiveTimeout * 1000);
+		timer.Elapsed += (s, e) => timedOut = true;
+		timer.Start();
+
+		// Receive data (wait until "\r\n" or timeout)
 		try {
-			ICryptographyService cryptographyService = new CryptographyService();
 			using var stream = client.GetStream();
-			await stream.WriteAsync(cryptographyService.Encrypt(data, cancellationToken: cancellationToken), cancellationToken);
-			await stream.WriteAsync(Encoding.ASCII.GetBytes("\r\n"), cancellationToken);
+
+			while (!data.Contains("\r\n") && !timedOut) {
+				if (client.Available > 0) {
+					await stream.ReadAsync(buffer, token);
+					data += Encoding.ASCII.GetString(buffer);
+					Array.Clear(buffer, 0, buffer.Length);
+				}
+			}
 		}
 		catch (Exception ex) {
 			Console.WriteLine(ex.ToString());
-			return false;
+			return null;
 		}
 
-		return true;
+		if (timedOut)
+			return null;
+
+		// Remove last 2 characters ("\r\n")
+		data = data[0..^2];
+
+		return CryptoUtils.DecryptData(Encoding.ASCII.GetBytes(data), aes);
 	}
 }
