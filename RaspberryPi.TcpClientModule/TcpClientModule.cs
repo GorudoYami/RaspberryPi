@@ -1,14 +1,14 @@
-﻿using System;
+﻿using GorudoYami.Common.Attributes;
 using System.Collections.Concurrent;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Timer = System.Timers.Timer;
 
-namespace RaspberryPi;
+namespace RaspberryPi.Modules;
 
+[WorkInProgress]
+[Obsolete("Tragiczny kod do poprawy")]
 public class TcpClientModule : IDisposable {
 	public string ServerHostname { get; set; }
 	public int ServerPort { get; set; }
@@ -110,8 +110,6 @@ public class TcpClientModule : IDisposable {
 			}
 		}
 	}
-
-	public
 
 	public async void Disconnect() {
 		TokenSource.Cancel();

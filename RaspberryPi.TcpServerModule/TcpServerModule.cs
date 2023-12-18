@@ -3,179 +3,167 @@ using System.Net.Sockets;
 using System.Text;
 using System.Security.Cryptography;
 using RaspberryPi.Common;
-using RaspberryPi.Common.Interfaces;
-using GorudoYami.Common.Cryptography;
-using RaspberryPi.TcpServerModule.Models;
+using GorudoYami.Common.Networking;
+using Microsoft.Extensions.Options;
+using GorudoYami.Common.Asynchronous;
+using GorudoYami.Common.Modules;
+using RaspberryPi.Modules.Models;
 
-namespace RaspberryPi.TcpServerModule;
+namespace RaspberryPi.Modules;
 
-public interface ITcpServerModule : IRaspberryPiModule, IDisposable {
-
+public interface ITcpServerModule : IModule {
+	Task BroadcastAsync(string data, bool encrypt = true, CancellationToken cancellationToken = default);
+	Task BroadcastAsync(byte[] data, bool encrypt = true, CancellationToken cancellationToken = default);
+	Task SendAsync(IPAddress address, byte[] data, bool encrypt = true, CancellationToken cancellationToken = default);
+	void Start();
+	Task StopAsync();
 }
 
-public class TcpServerModule : ITcpServerModule {
-	private const int _rsaKeySize = 8000;
-	private readonly IPAddress _address;
-	private readonly int _port;
-	private readonly Dictionary<TcpClient, ClientInfo> _clients;
+public class TcpServerModule : ITcpServerModule, IDisposable, IAsyncDisposable {
+	private const int _rsaKeySizeBits = 8000;
+	private const int _aesKeySizeBits = 256;
+	private const int _aesIVSizeBits = 128;
+
+	private readonly Dictionary<IPAddress, TcpClientInfo> _clients;
 	private readonly TcpListener _listener;
-	private CancellationTokenSource _cancellationTokenSource;
+	private readonly ICancellationTokenProvider _cancellationTokenProvider;
 	private Task? _listenTask;
 
-	public TcpServerModule(string hostname, int port) {
-		_clients = new Dictionary<TcpClient, ClientInfo>();
-		_port = port;
-		_address = Networking.GetAddressFromHostname(hostname);
-		_listener = new TcpListener(_address, _port);
-		_cancellationTokenSource = new CancellationTokenSource();
+	public TcpServerModule(IOptions<TcpServerModuleOptions> options, ICancellationTokenProvider cancellationTokenProvider) {
+		_cancellationTokenProvider = cancellationTokenProvider;
+		_clients = new Dictionary<IPAddress, TcpClientInfo>();
+		_listener = new TcpListener(Networking.GetAddressFromHostname(options.Value.Host), options.Value.Port);
 	}
 
 	public void Start() {
 		_listener.Start();
-		_listenTask = ListenAsync(_cancellationTokenSource.Token);
+		_listenTask = ListenAsync(_cancellationTokenProvider.GetToken());
 	}
 
 	public async Task StopAsync() {
 		if (_listenTask?.Status != TaskStatus.Running) {
-			return;
+			throw new InvalidOperationException("Listen task is not running");
 		}
 
-		_cancellationTokenSource.Cancel();
+		_cancellationTokenProvider.Cancel();
 		await _listenTask;
 		Cleanup();
 	}
 
 	private void Cleanup() {
-		_cancellationTokenSource.Dispose();
-
-		foreach (TcpClient client in _clients.Keys) {
-			CleanupClient(client);
+		foreach (IPAddress address in _clients.Keys) {
+			CleanupClient(address);
 		}
 
 		_clients.Clear();
 	}
 
-	private static void CleanupClient(TcpClient client) {
-		client.Close();
-		client.Dispose();
+	private void CleanupClient(IPAddress address, bool remove = false) {
+		if (_clients.ContainsKey(address)) {
+			_clients[address].Dispose();
+
+			if (remove) {
+				_clients.Remove(address);
+			}
+		}
 	}
 
-	public async Task<bool> BroadcastAsync(
+	public async Task BroadcastAsync(
+		string data,
+		bool encrypt = true,
+		CancellationToken cancellationToken = default) {
+		await BroadcastAsync(Encoding.UTF8.GetBytes(data), encrypt, cancellationToken);
+	}
+
+	public async Task BroadcastAsync(
 		byte[] data,
 		bool encrypt = true,
 		CancellationToken cancellationToken = default) {
-		IEnumerable<bool> results = await Task.WhenAll(
+		await Task.WhenAll(
 			_clients.Keys.Select(x => SendAsync(x, data, encrypt, cancellationToken))
 		);
-
-		return results.All(x => x);
 	}
 
-	public static async Task<bool> SendAsync(
-		TcpClient client,
+	public async Task SendAsync(
+		IPAddress address,
 		byte[] data,
 		bool encrypt = true,
 		CancellationToken cancellationToken = default) {
-
-		try {
-			ICryptographyService cryptographyService = new CryptographyService();
-			using var stream = client.GetStream();
-			if (encrypt) {
-				data = await cryptographyService.EncryptAsync(data, cancellationToken: cancellationToken);
-			}
-			await stream.WriteAsync(Encoding.UTF8.GetBytes("\r\n"), cancellationToken);
-		}
-		catch (Exception ex) {
-			Console.WriteLine(ex.ToString());
-			return false;
+		if (_clients.ContainsKey(address) == false) {
+			throw new InvalidOperationException($"Client {address} is not connected");
 		}
 
-		return true;
-	}
-
-	public async Task<byte[]> ReceiveAsync(byte[] data) {
-		byte[] buffer = new byte[1024];
-
-		bool timedOut = false;
-		using var timer = new Timer(_client.ReceiveTimeout * 1000);
-		timer.Elapsed += (s, e) => timedOut = true;
-		timer.Start();
-
-		// Receive data (wait until "\r\n" or timeout)
-		try {
-			using var stream = client.GetStream();
-
-			while (!data.Contains("\r\n") && !timedOut) {
-				if (client.Available > 0) {
-					await stream.ReadAsync(buffer, token);
-					data += Encoding.ASCII.GetString(buffer);
-					Array.Clear(buffer, 0, buffer.Length);
-				}
-			}
+		if (encrypt) {
+			await _clients[address].IO.WriteMessageAsync(data, cancellationToken);
 		}
-		catch (Exception ex) {
-			Console.WriteLine(ex.ToString());
-			return null;
+		else {
+			await _clients[address].NetworkStream.WriteAsync(data, cancellationToken);
+			await _clients[address].NetworkStream.WriteAsync(Encoding.UTF8.GetBytes("\r\n"), cancellationToken);
 		}
-
-		if (timedOut)
-			return null;
-
-		// Remove last 2 characters ("\r\n")
-		data = data[0..^2];
-
-		return CryptoUtils.DecryptData(Encoding.ASCII.GetBytes(data), aes);
 	}
 
 	private async Task ListenAsync(CancellationToken token) {
 		while (!token.IsCancellationRequested) {
 			TcpClient client = await _listener.AcceptTcpClientAsync(token);
+			IPAddress clientAddress = (client.Client.RemoteEndPoint as IPEndPoint)?.Address
+				?? throw new InvalidOperationException("Client remote endpoint is invalid");
 
-			if (client.Connected) {
-				await InitializeCommunicationAsync(client);
-
-				if (aes is not null)
-					_clients.Add(client, aes);
-				else
-					CleanupClient(client);
+			if (client.Connected && await InitializeCommunicationAsync(client, clientAddress) == false) {
+				CleanupClient(clientAddress, true);
 			}
 		}
 	}
 
-	private async Task InitializeCommunicationAsync(TcpClient client) {
-		client.ReceiveTimeout = 15000;
-		client.SendTimeout = 15000;
+	private async Task<bool> InitializeCommunicationAsync(TcpClient client, IPAddress clientAddress) {
+		using var clientStream = client.GetStream();
+		using var clientReader = new ByteStreamReader(clientStream, true);
 
+		using RSA rsa = RSA.Create(_rsaKeySizeBits);
 
-		using RSA rsa = RSA.Create(_rsaKeySize);
+		byte[] buffer = await clientReader.ReadMessageAsync(cancellationToken: _cancellationTokenProvider.GetToken());
+		if (buffer == null || buffer.Length < _rsaKeySizeBits / 8) {
+			return false;
+		}
 
-		// Receive client public key
-		byte[] buffer = await client.ReceiveAsync(tokenSource.Token);
-		if (buffer is null || buffer.Length < KeySizes.RSA_KEY_SIZE / 8)
-			return null;
-
-		// Import client public key
 		rsa.ImportRSAPublicKey(buffer, out int bytesRead);
-		if (bytesRead != buffer.Length)
-			return null;
+		if (bytesRead != buffer.Length) {
+			return false;
+		}
 
-		Aes clientAes = CryptoUtils.CreateAes();
+		Aes aes = GetAes();
+		byte[] data = rsa.Encrypt(aes.Key, RSAEncryptionPadding.OaepSHA512);
+		await clientStream.WriteAsync(data, _cancellationTokenProvider.GetToken());
+		await clientStream.WriteAsync(Encoding.ASCII.GetBytes("\r\n"), _cancellationTokenProvider.GetToken());
 
-		// Send encrypted AES key and IV with RSA
-		if (!await client.SendUnencryptedAsync(rsa.Encrypt(clientAes.Key, RSAEncryptionPadding.OaepSHA512), tokenSource.Token))
-			return null;
+		data = rsa.Encrypt(aes.IV, RSAEncryptionPadding.OaepSHA512);
+		await clientStream.WriteAsync(data, _cancellationTokenProvider.GetToken());
+		await clientStream.WriteAsync(Encoding.ASCII.GetBytes("\r\n"), _cancellationTokenProvider.GetToken());
 
-		if (!await TcpUtils.SendUnencryptedAsync(client, rsa.Encrypt(clientAes.IV, RSAEncryptionPadding.OaepSHA512), tokenSource.Token))
-			return null;
+		var csrwClient = new CryptoStreamReaderWriter(aes.CreateEncryptor(), aes.CreateDecryptor(), client.GetStream());
+		if (await csrwClient.ReadLineAsync() == "OK") {
+			_clients.Add(clientAddress, new TcpClientInfo(client, csrwClient));
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
 
-		// Receive secret application token
-		buffer = await TcpUtils.ReceiveAsync(client, _clients[client], tokenSource.Token);
-
-		return Encoding.ASCII.GetString(buffer) != _applicationToken ? null : clientAes;
+	private static Aes GetAes() {
+		Aes aes = Aes.Create();
+		aes.KeySize = _aesKeySizeBits;
+		aes.Key = RandomNumberGenerator.GetBytes(_aesKeySizeBits / 8);
+		aes.IV = RandomNumberGenerator.GetBytes(_aesIVSizeBits / 8);
+		return aes;
 	}
 
 	public void Dispose() {
-		StopAsync();
 		GC.SuppressFinalize(this);
+		StopAsync().GetAwaiter().GetResult();
+	}
+
+	public async ValueTask DisposeAsync() {
+		GC.SuppressFinalize(this);
+		await StopAsync();
 	}
 }
