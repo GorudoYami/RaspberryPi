@@ -1,8 +1,7 @@
-﻿using GorudoYami.Common.Asynchronous;
-using GorudoYami.Common.Cryptography;
-using GorudoYami.Common.Modules;
+﻿using GorudoYami.Common.Cryptography;
 using GorudoYami.Common.Streams;
 using Microsoft.Extensions.Options;
+using RaspberryPi.Common.Modules;
 using RaspberryPi.Common.Utilities;
 using RaspberryPi.Modules.Models;
 using System.Net.Sockets;
@@ -11,24 +10,15 @@ using System.Text;
 
 namespace RaspberryPi.Modules;
 
-public interface ITcpClientModule : IModule, IDisposable, IAsyncDisposable {
-	Task<bool> ConnectAsync(CancellationToken cancellationToken = default);
-	Task DisconnectAsync();
-	Task ReadAsync(CancellationToken cancellationToken = default);
-	Task ReadLineAsync(CancellationToken cancellationToken = default);
-	Task SendAsync(byte[] data, CancellationToken cancellationToken = default);
-	Task SendAsync(string data, CancellationToken cancellationToken = default);
-}
-
-public class TcpClientModule : ITcpClientModule {
-	private readonly TcpClientOptions _options;
+public class TcpClientModule : ITcpClientModule, IDisposable, IAsyncDisposable {
+	private readonly TcpClientModuleOptions _options;
 
 	private TcpClient? _server;
 	private Aes? _serverAes;
 	private CryptoStreamReaderWriter? _serverReaderWriter;
 	private ByteStreamReader? _serverUnencryptedReader;
 
-	public TcpClientModule(IOptions<TcpClientOptions> options) {
+	public TcpClientModule(IOptions<TcpClientModuleOptions> options) {
 		_options = options.Value;
 		_server = new TcpClient() {
 			ReceiveTimeout = _options.TimeoutSeconds * 1000,

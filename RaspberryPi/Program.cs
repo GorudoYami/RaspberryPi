@@ -5,13 +5,14 @@ using RaspberryPi.Modules;
 using Microsoft.Extensions.Logging;
 using NLog.Extensions.Logging;
 using RaspberryPi.Modules.Models;
+using RaspberryPi.Common.Modules;
 
 namespace RaspberryPi;
 
 public static class Program {
 	public static void Main() {
 		using ServiceProvider serviceProvide = CreateServiceProvider();
-		IRaspberryPi raspberryPi = serviceProvide.GetRequiredService<IRaspberryPi>();
+		IRaspberryPiModule raspberryPi = serviceProvide.GetRequiredService<IRaspberryPiModule>();
 
 		raspberryPi.Run();
 	}
@@ -24,7 +25,7 @@ public static class Program {
 
 		IServiceCollection serviceCollection = new ServiceCollection()
 			.AddSingleton(configuration)
-			.AddModule<IRaspberryPi, RaspberyPi>()
+			.AddModule<IRaspberryPiModule, RaspberryPiModule>()
 			.AddModule<ITcpClientModule, TcpClientModule>()
 			.AddLogging(builder => {
 				builder.ClearProviders();
@@ -33,8 +34,8 @@ public static class Program {
 			});
 
 		serviceCollection
-			.AddOptions<TcpClientOptions>()
-			.Bind(configuration.GetRequiredSection(nameof(TcpClientOptions)));
+			.AddOptions<TcpClientModuleOptions>()
+			.Bind(configuration.GetRequiredSection(nameof(TcpClientModuleOptions)));
 
 		return serviceCollection.BuildServiceProvider();
 	}

@@ -1,14 +1,13 @@
-﻿using GorudoYami.Common.Modules;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using RaspberryPi.CarModule.Enums;
 using RaspberryPi.CarModule.Models;
+using RaspberryPi.Common.Modules;
 using System.Device.Gpio;
 using System.Device.Pwm;
-using System.Linq;
 
 namespace RaspberryPi.CarModule;
 
-public class CarModule : IModule, IDisposable {
+public class CarModule : ICarModule, IDisposable {
 	private readonly List<IDriverPin> _pins;
 	private int _turnPower;
 	private int _drivePower;

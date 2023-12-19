@@ -4,22 +4,13 @@ using System.Text;
 using System.Security.Cryptography;
 using RaspberryPi.Common;
 using Microsoft.Extensions.Options;
-using GorudoYami.Common.Asynchronous;
-using GorudoYami.Common.Modules;
 using RaspberryPi.Modules.Models;
 using GorudoYami.Common.Streams;
 using GorudoYami.Common.Cryptography;
 using RaspberryPi.Common.Utilities;
+using RaspberryPi.Common.Modules;
 
 namespace RaspberryPi.Modules;
-
-public interface ITcpServerModule : IModule {
-	Task BroadcastAsync(string data, bool encrypt = true, CancellationToken cancellationToken = default);
-	Task BroadcastAsync(byte[] data, bool encrypt = true, CancellationToken cancellationToken = default);
-	Task SendAsync(IPAddress address, byte[] data, bool encrypt = true, CancellationToken cancellationToken = default);
-	void Start();
-	Task StopAsync();
-}
 
 public class TcpServerModule : ITcpServerModule, IDisposable, IAsyncDisposable {
 	private readonly Dictionary<IPAddress, TcpClientInfo> _clients;
@@ -28,7 +19,7 @@ public class TcpServerModule : ITcpServerModule, IDisposable, IAsyncDisposable {
 	private Task? _listenTask;
 
 	public TcpServerModule(IOptions<TcpServerModuleOptions> options) {
-		_clients = new Dictionary<IPAddress, TcpClientInfo>();
+		_clients = [];
 		_listener = new TcpListener(Networking.GetAddressFromHostname(options.Value.Host), options.Value.Port);
 	}
 
