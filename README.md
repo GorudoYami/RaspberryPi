@@ -1,2 +1,14 @@
-# Raspberry
-Private raspberry project, currently not working on it
+# RaspberryPi
+## Modules
+### DONE
+- TcpServerModule
+- TcpClientModule
+- CarModule
+### TODO
+- ModemModule
+- SensorModule
+- CameraModule
+- ConnectivityModule?
+## Tests
+### TODO
+- Everything
