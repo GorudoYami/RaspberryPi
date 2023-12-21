@@ -1,11 +1,6 @@
 ﻿namespace RaspberryPi.Modules.Models;
 
 public class TcpServerModuleOptions {
-	public string Host { get; }
-	public int Port { get; }
-
-	public TcpServerModuleOptions(string host, int port) {
-		Host = host;
-		Port = port;
-	}
+	public required string Host { get; init; }
+	public required int Port { get; init; }
 }

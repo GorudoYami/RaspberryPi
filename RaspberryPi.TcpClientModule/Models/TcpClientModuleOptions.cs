@@ -7,13 +7,7 @@ using System.Threading.Tasks;
 namespace RaspberryPi.Modules.Models;
 
 public class TcpClientModuleOptions {
-	public string ServerHost { get; }
-	public int ServerPort { get; }
-	public int TimeoutSeconds { get; }
-
-	public TcpClientModuleOptions(string serverHost, int serverPort, int timeoutSeconds) {
-		ServerHost = serverHost;
-		ServerPort = serverPort;
-		TimeoutSeconds = timeoutSeconds;
-	}
+	public required string ServerHost { get; init; }
+	public required int ServerPort { get; init; }
+	public required int TimeoutSeconds { get; init; }
 }

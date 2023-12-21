@@ -23,7 +23,11 @@ public class TcpClientModuleTests {
 	[Test]
 	public void Constructor() {
 		_mockedOptions!.Setup(x => x.Value)
-			.Returns(new TcpClientModuleOptions("localhost", 2137, 5000));
+			.Returns(new TcpClientModuleOptions() {
+				ServerHost = "localhost",
+				ServerPort = 2137,
+				TimeoutSeconds = 5000
+			});
 
 		Assert.DoesNotThrow(() => GetInstance());
 	}
