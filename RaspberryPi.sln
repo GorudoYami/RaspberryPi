@@ -5,7 +5,7 @@ VisualStudioVersion = 17.7.34302.85
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.Common", "RaspberryPi.Common\RaspberryPi.Common.csproj", "{9424A14D-C772-4AF8-B728-A788CA27CD70}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.CarModule", "RaspberryPi.CarModule\RaspberryPi.CarModule.csproj", "{4663464F-CD01-427A-9D2E-9DBED5C4C14A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.DrivingModule", "RaspberryPi.DrivingModule\RaspberryPi.DrivingModule.csproj", "{4663464F-CD01-427A-9D2E-9DBED5C4C14A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.TcpServerModule", "RaspberryPi.TcpServerModule\RaspberryPi.TcpServerModule.csproj", "{37181A05-724E-4841-A220-844CFCFB7FC4}"
 EndProject
@@ -19,7 +19,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Modules", "Modules", "{DFF0
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.TcpClientModule.Tests", "RaspberryPi.TcpClientModule.Tests\RaspberryPi.TcpClientModule.Tests.csproj", "{F63E872F-75DA-4F08-BFC9-58F456165DFE}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.CarModule.Tests", "RaspberryPi.CarModule.Tests\RaspberryPi.CarModule.Tests.csproj", "{0D79F7FB-9C0B-4499-BC3F-2AC70E91632D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.DrivingModule.Tests", "RaspberryPi.DrivingModule.Tests\RaspberryPi.DrivingModule.Tests.csproj", "{0D79F7FB-9C0B-4499-BC3F-2AC70E91632D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.TcpServerModule.Tests", "RaspberryPi.TcpServerModule.Tests\RaspberryPi.TcpServerModule.Tests.csproj", "{2F5C23B8-BF4A-4FF6-88EA-699B8BB70508}"
 EndProject

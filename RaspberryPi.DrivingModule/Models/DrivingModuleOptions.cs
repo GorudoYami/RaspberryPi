@@ -1,5 +1,5 @@
 ﻿namespace RaspberryPi.Modules.Models;
 
-public class CarModuleOptions {
+public class DrivingModuleOptions {
 	public required ICollection<IPin> Pins { get; init; }
 }

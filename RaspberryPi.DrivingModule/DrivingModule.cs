@@ -7,7 +7,7 @@ using System.Device.Pwm;
 
 namespace RaspberryPi.Modules;
 
-public class CarModule : ICarModule, IDisposable {
+public class DrivingModule : ICarModule, IDisposable {
 	private readonly ICollection<IPin> _pins;
 	private int _turnPower;
 	private int _drivePower;
@@ -17,7 +17,7 @@ public class CarModule : ICarModule, IDisposable {
 	private GpioController Controller { get; set; }
 	private Dictionary<Direction, PwmChannel> PwmChannels { get; set; }
 
-	public CarModule(IOptions<CarModuleOptions> options) {
+	public DrivingModule(IOptions<DrivingModuleOptions> options) {
 		_pins = options.Value.Pins;
 		_turnPower = 0;
 		_drivePower = 0;
