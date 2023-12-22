@@ -23,7 +23,10 @@ public class TcpServerModuleTests {
 	[Test]
 	public void Constructor() {
 		_mockedOptions!.Setup(x => x.Value)
-			.Returns(new TcpServerModuleOptions("localhost", 2137));
+			.Returns(new TcpServerModuleOptions() {
+				Host = "localhost",
+				Port = 2137
+			});
 
 		Assert.DoesNotThrow(() => GetInstance());
 	}

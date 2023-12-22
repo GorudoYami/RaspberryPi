@@ -23,7 +23,7 @@ public class CarModuleTests {
 	[Test]
 	public void Constructor_IncompletePins_ThrowException() {
 		_mockedOptions!.Setup(x => x.Value)
-			.Returns(new CarModuleOptions(new List<IDriverPin>()));
+			.Returns(new CarModuleOptions(new List<IPin>()));
 
 		Assert.Throws<IncompletePinMappingException>(() => GetInstance());
 	}

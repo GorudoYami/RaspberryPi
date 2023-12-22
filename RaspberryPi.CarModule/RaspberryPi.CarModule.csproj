@@ -17,8 +17,4 @@
     <ProjectReference Include="..\RaspberryPi.Common\RaspberryPi.Common.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Extensions\" />
-  </ItemGroup>
-
 </Project>

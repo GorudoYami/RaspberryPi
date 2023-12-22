@@ -1,14 +1,14 @@
 ﻿using Microsoft.Extensions.Options;
-using RaspberryPi.CarModule.Enums;
-using RaspberryPi.CarModule.Models;
 using RaspberryPi.Common.Modules;
+using RaspberryPi.Modules.Enums;
+using RaspberryPi.Modules.Models;
 using System.Device.Gpio;
 using System.Device.Pwm;
 
-namespace RaspberryPi.CarModule;
+namespace RaspberryPi.Modules;
 
 public class CarModule : ICarModule, IDisposable {
-	private readonly List<IDriverPin> _pins;
+	private readonly ICollection<IPin> _pins;
 	private int _turnPower;
 	private int _drivePower;
 	private Direction? _turnDirection;
@@ -18,167 +18,153 @@ public class CarModule : ICarModule, IDisposable {
 	private Dictionary<Direction, PwmChannel> PwmChannels { get; set; }
 
 	public CarModule(IOptions<CarModuleOptions> options) {
-		_pins = options.Value.Pins.ToList();
+		_pins = options.Value.Pins;
 		_turnPower = 0;
 		_drivePower = 0;
 		_turnDirection = null;
 		_driveDirection = null;
 		Controller = new GpioController();
-		PwmChannels = new Dictionary<Direction, PwmChannel>();
+		PwmChannels = [];
 
-		ValidatePins();
 		InitializePins();
 	}
 
-	private bool ValidatePins() {
-		bool missingDirectionPins = Enum.GetValues<Direction>()
-			.Except(_pins.Select(x => x.BoundDirection), EqualityComparer<Direction>.Default)
-			.Any();
-
-		foreach (var direction in Enum.GetValues<Direction>()) {
-			if (_pins.Exists(p => p.BoundDirection == direction) == false)
-				return false;
-		}
-
-		if (!Pins.Exists(p => p is CarDriverPwmPin && p.BoundDirection is Direction.Left or Direction.Right))
-			return false;
-
-		if (!Pins.Exists(p => p is CarDriverPwmPin && p.BoundDirection is Direction.Forward or Direction.Back))
-			return false;
-
-		return true;
-	}
-
 	private void InitializePins() {
-		foreach (var pin in Pins) {
-			if (pin is CarDriverPin) {
-				Controller.OpenPin(pin.Key, pin.Mode);
-				pin.Open = true;
+		foreach (IPin pin in _pins) {
+			if (pin is Pin) {
+				Controller.OpenPin(pin.Number, pin.Mode);
 			}
-			else if (pin is CarDriverPwmPin pwmPin) {
-				PwmChannel pwmChannel = PwmChannel.Create(pwmPin.PwmChip, pwmPin.Key);
-				PwmChannels.Add(pin.BoundDirection, pwmChannel);
+			else if (pin is PwmPin pwmPin) {
+				PwmChannel pwmChannel = PwmChannel.Create(pwmPin.PwmChip, pwmPin.Number, dutyCyclePercentage: 0);
+				PwmChannels.Add(pin.Direction, pwmChannel);
 			}
 		}
 	}
 
 	private void DeinitializePins() {
-		foreach (var pin in Pins) {
-			Controller.ClosePin(pin.Key);
-			pin.Open = false;
+		foreach (Pin pin in _pins.OfType<Pin>()) {
+			Controller.ClosePin(pin.Number);
+		}
+		foreach (PwmChannel pwmChannel in PwmChannels.Values) {
+			pwmChannel.Stop();
+			pwmChannel.Dispose();
 		}
 	}
 
 	public void Left(int power = 50) {
-		if (TurnDirection is Direction.Left && TurnPower == power)
+		if (_turnDirection is Direction.Left && _turnPower == power) {
 			return;
+		}
 
-		TurnDirection = Direction.Left;
-		TurnPower = power;
+		_turnDirection = Direction.Left;
+		_turnPower = power;
 		UpdateTurnPins();
 	}
 
 	public void Right(int power = 50) {
-		if (TurnDirection is Direction.Right && TurnPower == power)
+		if (_turnDirection is Direction.Right && _turnPower == power) {
 			return;
+		}
 
-		TurnDirection = Direction.Right;
-		TurnPower = power;
+		_turnDirection = Direction.Right;
+		_turnPower = power;
 		UpdateTurnPins();
 	}
 
 	public void Straight() {
-		TurnDirection = null;
+		_turnDirection = null;
 		UpdateTurnPins();
 	}
 
 	public void Forward(int power = 100) {
-		DriveDirection = Direction.Forward;
-		DrivePower = power;
+		_driveDirection = Direction.Forward;
+		_drivePower = power;
 		UpdateDrivePins();
 	}
 
 	public void Back(int power = 100) {
-		if (DriveDirection is Direction.Back && DrivePower == power)
+		if (_driveDirection is Direction.Back && _drivePower == power) {
 			return;
+		}
 
-		DriveDirection = Direction.Back;
-		DrivePower = power;
+		_driveDirection = Direction.Back;
+		_drivePower = power;
 		UpdateDrivePins();
 	}
 
 	public void Stop() {
-		DriveDirection = null;
-		TurnDirection = null;
-		DrivePower = 0;
-		TurnPower = 0;
-		IsMoving = false;
+		_driveDirection = null;
+		_turnDirection = null;
+		_drivePower = 0;
+		_turnPower = 0;
 		UpdateDrivePins();
 		UpdateTurnPins();
 	}
 
 	private void UpdateTurnPins() {
-		if (TurnDirection is null)
+		if (_turnDirection == null) {
 			SetTurnPinsLow();
-		else
+		}
+		else {
 			ToggleTurnPins();
+		}
 	}
 
 	private void SetTurnPinsLow() {
-		IDriverPin pin = Pins.Single(p => p.BoundDirection == Direction.Left);
-		Controller.Write(pin.Key, PinValue.Low);
+		IPin pin = _pins.Single(p => p.Direction == Direction.Left);
+		Controller.Write(pin.Number, PinValue.Low);
 
-		pin = Pins.Single(p => p.BoundDirection == Direction.Right);
-		Controller.Write(pin.Key, PinValue.Low);
+		pin = _pins.Single(p => p.Direction == Direction.Right);
+		Controller.Write(pin.Number, PinValue.Low);
 
 		PwmChannel pwmChannel = PwmChannels.Single(x => x.Key is Direction.Left or Direction.Right).Value;
 		pwmChannel.Stop();
 	}
 
 	private void ToggleTurnPins() {
-		IDriverPin pin = Pins.Single(p => p.BoundDirection == GetOppositeDirection(TurnDirection.Value));
-		Controller.Write(pin.Key, PinValue.Low);
+		IPin pin = _pins.Single(p => p.Direction == GetOppositeDirection(_turnDirection!.Value));
+		Controller.Write(pin.Number, PinValue.Low);
 
 		PwmChannel pwmChannel = PwmChannels.Single(x => x.Key is Direction.Left or Direction.Right).Value;
 		pwmChannel.Stop();
-		pwmChannel.DutyCycle = TurnPower;
+		pwmChannel.DutyCycle = _turnPower;
 		pwmChannel.Start();
 
-		pin = Pins.Single(p => p.BoundDirection == TurnDirection);
-		Controller.Write(pin.Key, PinValue.High);
+		pin = _pins.Single(p => p.Direction == _turnDirection);
+		Controller.Write(pin.Number, PinValue.High);
 	}
 
 	private void UpdateDrivePins() {
-		if (DriveDirection is null)
+		if (_driveDirection == null) {
 			SetDrivePinsLow();
+		}
 		else {
 			ToggleDrivePins();
-			IsMoving = true;
 		}
 	}
 
 	private void SetDrivePinsLow() {
-		IDriverPin pin = Pins.Single(p => p.BoundDirection == Direction.Forward);
-		Controller.Write(pin.Key, PinValue.Low);
+		IPin pin = _pins.Single(p => p.Direction == Direction.Forward);
+		Controller.Write(pin.Number, PinValue.Low);
 
-		pin = Pins.Single(p => p.BoundDirection == Direction.Back);
-		Controller.Write(pin.Key, PinValue.Low);
+		pin = _pins.Single(p => p.Direction == Direction.Back);
+		Controller.Write(pin.Number, PinValue.Low);
 
 		PwmChannel pwmChannel = PwmChannels.Single(x => x.Key is Direction.Forward or Direction.Back).Value;
 		pwmChannel.Stop();
 	}
 
 	private void ToggleDrivePins() {
-		IDriverPin pin = Pins.Single(p => p.BoundDirection == GetOppositeDirection(DriveDirection.Value));
-		Controller.Write(pin.Key, PinValue.Low);
+		IPin pin = _pins.Single(p => p.Direction == GetOppositeDirection(_driveDirection!.Value));
+		Controller.Write(pin.Number, PinValue.Low);
 
 		PwmChannel pwmChannel = PwmChannels.Single(x => x.Key is Direction.Forward or Direction.Back).Value;
 		pwmChannel.Stop();
-		pwmChannel.DutyCycle = DrivePower;
+		pwmChannel.DutyCycle = _drivePower;
 		pwmChannel.Start();
 
-		pin = Pins.Single(p => p.BoundDirection == DriveDirection);
-		Controller.Write(pin.Key, PinValue.High);
+		pin = _pins.Single(p => p.Direction == _driveDirection);
+		Controller.Write(pin.Number, PinValue.High);
 	}
 
 	private static Direction GetOppositeDirection(Direction direction) {
@@ -192,9 +178,9 @@ public class CarModule : ICarModule, IDisposable {
 	}
 
 	public void Dispose() {
+		GC.SuppressFinalize(this);
 		Stop();
 		DeinitializePins();
 		Controller.Dispose();
-		GC.SuppressFinalize(this);
 	}
 }
