@@ -1,6 +1,7 @@
 ﻿using RaspberryPi.Common.Interfaces;
 using System.Device;
 using System.Device.Gpio;
+using System.Device.Pwm;
 
 namespace RaspberryPi.Common;
 
@@ -32,6 +33,7 @@ public class GpioControllerProvider : IGpioControllerProvider, IDisposable {
 	public void SetPinMode(int pinNumber, PinMode mode) => _controller.SetPinMode(pinNumber, mode);
 	public WaitForEventResult WaitForEvent(int pinNumber, PinEventTypes eventTypes, CancellationToken cancellationToken = default) => _controller.WaitForEvent(pinNumber, eventTypes, cancellationToken);
 	public ValueTask<WaitForEventResult> WaitForEventAsync(int pinNumber, PinEventTypes eventTypes, CancellationToken cancellationToken = default) => _controller.WaitForEventAsync(pinNumber, eventTypes, cancellationToken);
+	public PwmChannel GetPwmChannel(int chip, int channel, int frequency, double dutyCyclePercentage) => PwmChannel.Create(chip, channel, frequency, dutyCyclePercentage);
 
 	public void Dispose() {
 		GC.SuppressFinalize(this);

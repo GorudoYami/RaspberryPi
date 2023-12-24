@@ -1,5 +1,5 @@
 ﻿
-namespace RaspberryPi.Modules.Enums;
+namespace RaspberryPi.Driving.Enums;
 
 public enum Direction {
 	Left = 1,

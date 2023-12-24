@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RaspberryPi.DrivingModule\RaspberryPi.DrivingModule.csproj" />
+    <ProjectReference Include="..\RaspberryPi.Driving\RaspberryPi.Driving.csproj" />
   </ItemGroup>
 
 </Project>
