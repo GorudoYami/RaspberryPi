@@ -9,7 +9,7 @@ using System.Device.Pwm;
 
 namespace RaspberryPi.Driving;
 
-public class DrivingModule : ICarModule, IDisposable {
+public class DrivingModule : IDrivingModule, IDisposable {
 	private readonly ICollection<DrivingPin> _pins;
 	private readonly IGpioControllerProvider _controller;
 	private readonly Dictionary<Direction, PwmChannel> _pwmChannels;

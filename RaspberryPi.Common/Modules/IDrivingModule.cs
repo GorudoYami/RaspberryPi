@@ -2,6 +2,6 @@
 
 namespace RaspberryPi.Common.Modules;
 
-public interface ICarModule : IModule {
+public interface IDrivingModule : IModule {
 
 }
