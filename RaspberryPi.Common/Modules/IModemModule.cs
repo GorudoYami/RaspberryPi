@@ -1,5 +1,7 @@
-﻿namespace RaspberryPi.Common.Modules;
+﻿using GorudoYami.Common.Modules;
 
-public interface IModemModule {
+namespace RaspberryPi.Common.Modules;
+
+public interface IModemModule : IModule {
 
 }

@@ -1,5 +1,12 @@
-﻿namespace RaspberryPi.Modem.Models;
+﻿
+namespace RaspberryPi.Modem.Models;
 
-public class ModemModuleOptions(ICollection<ModemPin> pins) {
-	public required ICollection<ModemPin> Pins { get; init; } = pins;
+public class ModemModuleOptions {
+	public required string SerialPort { get; init; }
+	public required int DefaultBaudRate { get; init; }
+	public required int TargetBaudRate { get; init; }
+
+	public static bool Validate(ModemModuleOptions options) {
+		throw new NotImplementedException();
+	}
 }

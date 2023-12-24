@@ -1,9 +1,9 @@
-﻿using RaspberryPi.Common.Interfaces;
+﻿using RaspberryPi.Common.Gpio.Pwm;
 using System.Device;
 using System.Device.Gpio;
 using System.Device.Pwm;
 
-namespace RaspberryPi.Common;
+namespace RaspberryPi.Common.Gpio;
 
 public class GpioControllerProvider : IGpioControllerProvider, IDisposable {
 	public int PinCount => _controller.PinCount;
@@ -87,8 +87,8 @@ public class GpioControllerProvider : IGpioControllerProvider, IDisposable {
 		return _controller.WaitForEventAsync(pinNumber, eventTypes, cancellationToken);
 	}
 
-	public PwmChannel GetPwmChannel(int chip, int channel, int frequency, double dutyCyclePercentage) {
-		return PwmChannel.Create(chip, channel, frequency, dutyCyclePercentage);
+	public IPwmChannelProvider GetPwmChannel(int chip, int channel, int frequency, double dutyCyclePercentage) {
+		return new PwmChannelProvider(chip, channel, frequency, dutyCyclePercentage);
 	}
 
 	public void Dispose() {

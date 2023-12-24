@@ -6,6 +6,10 @@ using NLog.Extensions.Logging;
 using RaspberryPi.Client;
 using RaspberryPi.Client.Models;
 using RaspberryPi.Common.Modules;
+using RaspberryPi.Driving;
+using RaspberryPi.Driving.Models;
+using RaspberryPi.Modem;
+using RaspberryPi.Modem.Models;
 
 namespace RaspberryPi;
 
@@ -17,26 +21,52 @@ public static class Program {
 		raspberryPi.Run();
 	}
 
-	public static ServiceProvider CreateServiceProvider() {
+	private static ServiceProvider CreateServiceProvider() {
 		IConfiguration configuration = new ConfigurationBuilder()
 			.SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
 			.AddWritableAppSettings(reloadOnChange: true)
 			.Build();
 
-		IServiceCollection serviceCollection = new ServiceCollection()
+		IServiceCollection services = new ServiceCollection()
 			.AddSingleton(configuration)
-			.AddModule<IRaspberryPiModule, RaspberryPiModule>()
-			.AddModule<IClientModule, ClientModule>()
+			.AddModules()
+			.AddOptions()
 			.AddLogging(builder => {
 				builder.ClearProviders();
 				builder.SetMinimumLevel(LogLevel.Debug);
 				builder.AddNLog();
 			});
 
-		serviceCollection
-			.AddOptions<ClientModuleOptions>()
-			.Bind(configuration.GetRequiredSection(nameof(ClientModuleOptions)));
+		return services.BuildServiceProvider();
+	}
 
-		return serviceCollection.BuildServiceProvider();
+	private static IServiceCollection AddModules(this IServiceCollection services) {
+		return services
+			.AddModule<IRaspberryPiModule, RaspberryPiModule>()
+			.AddModule<IClientModule, ClientModule>()
+			.AddModule<IModemModule, ModemModule>()
+			.AddModule<IDrivingModule, DrivingModule>();
+	}
+
+	public static IServiceCollection AddOptions(this IServiceCollection services, IConfiguration configuration) {
+		services
+			.AddOptions<ClientModuleOptions>()
+			.Bind(configuration.GetRequiredSection(nameof(ClientModuleOptions)))
+			.Validate(ClientModuleOptions.Validate)
+			.ValidateOnStart();
+
+		services
+			.AddOptions<ModemModuleOptions>()
+			.Bind(configuration.GetRequiredSection(nameof(ModemModuleOptions)))
+			.Validate(ModemModuleOptions.Validate)
+			.ValidateOnStart();
+
+		services
+			.AddOptions<DrivingModuleOptions>()
+			.Bind(configuration.GetRequiredSection(nameof(DrivingModuleOptions)))
+			.Validate(DrivingModuleOptions.Validate)
+			.ValidateOnStart();
+
+		return services;
 	}
 }

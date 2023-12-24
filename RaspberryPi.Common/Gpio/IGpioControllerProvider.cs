@@ -1,13 +1,14 @@
-﻿using System.Device;
+﻿using RaspberryPi.Common.Gpio.Pwm;
+using System.Device;
 using System.Device.Gpio;
 using System.Device.Pwm;
 
-namespace RaspberryPi.Common.Interfaces;
+namespace RaspberryPi.Common.Gpio;
 
 public interface IGpioControllerProvider {
 	void ClosePin(int pinNumber);
 	PinMode GetPinMode(int pinNumber);
-	PwmChannel GetPwmChannel(int chip, int channel, int frequency, double dutyCyclePercentage);
+	IPwmChannelProvider GetPwmChannel(int chip, int channel, int frequency, double dutyCyclePercentage);
 	bool IsPinModeSupported(int pinNumber, PinMode mode);
 	GpioPin OpenPin(int pinNumber);
 	GpioPin OpenPin(int pinNumber, PinMode pinMode);

@@ -7,7 +7,7 @@ namespace RaspberryPi.Client.Tests;
 
 [TestFixture]
 public class ClientModuleTests {
-	private ClientModule? _tcpClientModule;
+	private ClientModule? _clientModule;
 	private Mock<IOptions<ClientModuleOptions>>? _mockedOptions;
 
 	[SetUp]
@@ -16,7 +16,7 @@ public class ClientModuleTests {
 	}
 
 	private ClientModule GetInstance() {
-		return _tcpClientModule ??= new ClientModule(_mockedOptions!.Object);
+		return _clientModule ??= new ClientModule(_mockedOptions!.Object);
 	}
 
 	[Ignore("WIP")]
@@ -34,6 +34,6 @@ public class ClientModuleTests {
 
 	[TearDown]
 	public void TearDown() {
-		_tcpClientModule?.Dispose();
+		_clientModule?.Dispose();
 	}
 }

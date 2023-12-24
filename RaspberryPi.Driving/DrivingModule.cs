@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
-using RaspberryPi.Common.Interfaces;
+using RaspberryPi.Common.Gpio;
+using RaspberryPi.Common.Gpio.Pwm;
 using RaspberryPi.Common.Modules;
 using RaspberryPi.Driving.Enums;
 using RaspberryPi.Driving.Exceptions;
@@ -12,7 +13,7 @@ namespace RaspberryPi.Driving;
 public class DrivingModule : IDrivingModule, IDisposable {
 	private readonly ICollection<DrivingPin> _pins;
 	private readonly IGpioControllerProvider _controller;
-	private readonly Dictionary<Direction, PwmChannel> _pwmChannels;
+	private readonly Dictionary<Direction, IPwmChannelProvider> _pwmChannels;
 	private double _turnPower;
 	private double _drivePower;
 	private Direction? _turnDirection;
@@ -33,7 +34,7 @@ public class DrivingModule : IDrivingModule, IDisposable {
 	private void InitializePins() {
 		foreach (DrivingPin pin in _pins) {
 			if (pin is DrivingPwmPin pwmPin) {
-				PwmChannel pwmChannel = _controller.GetPwmChannel(pwmPin.Chip, pwmPin.Number, 400, 0);
+				IPwmChannelProvider pwmChannel = _controller.GetPwmChannel(pwmPin.Chip, pwmPin.Number, 400, 0);
 				_pwmChannels.Add(pin.Direction, pwmChannel);
 			}
 			else {
@@ -47,7 +48,7 @@ public class DrivingModule : IDrivingModule, IDisposable {
 			_controller.ClosePin(pin.Number);
 		}
 
-		foreach (PwmChannel pwmChannel in _pwmChannels.Values) {
+		foreach (IPwmChannelProvider pwmChannel in _pwmChannels.Values) {
 			pwmChannel.Stop();
 			pwmChannel.Dispose();
 		}
@@ -107,9 +108,8 @@ public class DrivingModule : IDrivingModule, IDisposable {
 		UpdateTurnPins();
 	}
 
-	// TODO: Change since it will be a servo
 	private void UpdateTurnPins() {
-		throw new NotImplementedException();
+		// TODO: Change since it will be a servo
 	}
 
 	private void UpdateDrivePins() {
