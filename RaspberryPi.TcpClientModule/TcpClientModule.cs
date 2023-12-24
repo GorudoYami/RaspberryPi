@@ -36,7 +36,7 @@ public class TcpClientModule : ITcpClientModule, IDisposable, IAsyncDisposable {
 			SendTimeout = _options.TimeoutSeconds * 1000,
 		};
 
-		Task timeoutTask = Task.Delay(_options.TimeoutSeconds, cancellationToken);
+		Task timeoutTask = Task.Delay(_options.TimeoutSeconds * 1000, cancellationToken);
 		Task connectTask = _server.ConnectAsync(_options.ServerHost, _options.ServerPort);
 		await Task.WhenAny(timeoutTask, connectTask);
 
@@ -48,8 +48,9 @@ public class TcpClientModule : ITcpClientModule, IDisposable, IAsyncDisposable {
 		_serverUnencryptedReader = new ByteStreamReader(serverStream, true);
 
 		using RSA rsa = RSA.Create(CryptographyKeySizes.RsaKeySizeBits);
-
-		await serverStream.WriteAsync(rsa.ExportRSAPublicKey(), cancellationToken);
+		byte[] test = rsa.ExportRSAPublicKey();
+		string test2 = Encoding.ASCII.GetString(test);
+		await serverStream.WriteAsync(test, cancellationToken);
 		await serverStream.WriteAsync(Encoding.ASCII.GetBytes("\r\n"), cancellationToken);
 
 		bool result = false;

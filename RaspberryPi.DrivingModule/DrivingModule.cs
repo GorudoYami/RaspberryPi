@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Options;
+using RaspberryPi.Common.Interfaces;
 using RaspberryPi.Common.Modules;
 using RaspberryPi.Modules.Enums;
 using RaspberryPi.Modules.Models;
@@ -8,44 +9,43 @@ using System.Device.Pwm;
 namespace RaspberryPi.Modules;
 
 public class DrivingModule : ICarModule, IDisposable {
-	private readonly ICollection<IPin> _pins;
+	private readonly ICollection<IDrivingPin> _pins;
+	private readonly IGpioControllerProvider _controller;
+	private readonly Dictionary<Direction, PwmChannel> _pwmChannels;
 	private int _turnPower;
 	private int _drivePower;
 	private Direction? _turnDirection;
 	private Direction? _driveDirection;
 
-	private GpioController Controller { get; set; }
-	private Dictionary<Direction, PwmChannel> PwmChannels { get; set; }
-
-	public DrivingModule(IOptions<DrivingModuleOptions> options) {
+	public DrivingModule(IOptions<DrivingModuleOptions> options, IGpioControllerProvider controller) {
 		_pins = options.Value.Pins;
 		_turnPower = 0;
 		_drivePower = 0;
 		_turnDirection = null;
 		_driveDirection = null;
-		Controller = new GpioController();
-		PwmChannels = [];
+		_controller = controller;
+		_pwmChannels = [];
 
 		InitializePins();
 	}
 
 	private void InitializePins() {
-		foreach (IPin pin in _pins) {
+		foreach (IDrivingPin pin in _pins) {
 			if (pin is Pin) {
-				Controller.OpenPin(pin.Number, pin.Mode);
+				_controller.OpenPin(pin.Number, PinMode.Output);
 			}
 			else if (pin is PwmPin pwmPin) {
 				PwmChannel pwmChannel = PwmChannel.Create(pwmPin.PwmChip, pwmPin.Number, dutyCyclePercentage: 0);
-				PwmChannels.Add(pin.Direction, pwmChannel);
+				_pwmChannels.Add(pin.Direction, pwmChannel);
 			}
 		}
 	}
 
 	private void DeinitializePins() {
 		foreach (Pin pin in _pins.OfType<Pin>()) {
-			Controller.ClosePin(pin.Number);
+			_controller.ClosePin(pin.Number);
 		}
-		foreach (PwmChannel pwmChannel in PwmChannels.Values) {
+		foreach (PwmChannel pwmChannel in _pwmChannels.Values) {
 			pwmChannel.Stop();
 			pwmChannel.Dispose();
 		}
@@ -111,27 +111,27 @@ public class DrivingModule : ICarModule, IDisposable {
 	}
 
 	private void SetTurnPinsLow() {
-		IPin pin = _pins.Single(p => p.Direction == Direction.Left);
-		Controller.Write(pin.Number, PinValue.Low);
+		IDrivingPin pin = _pins.Single(p => p.Direction == Direction.Left);
+		_controller.Write(pin.Number, PinValue.Low);
 
 		pin = _pins.Single(p => p.Direction == Direction.Right);
-		Controller.Write(pin.Number, PinValue.Low);
+		_controller.Write(pin.Number, PinValue.Low);
 
-		PwmChannel pwmChannel = PwmChannels.Single(x => x.Key is Direction.Left or Direction.Right).Value;
+		PwmChannel pwmChannel = _pwmChannels.Single(x => x.Key is Direction.Left or Direction.Right).Value;
 		pwmChannel.Stop();
 	}
 
 	private void ToggleTurnPins() {
-		IPin pin = _pins.Single(p => p.Direction == GetOppositeDirection(_turnDirection!.Value));
-		Controller.Write(pin.Number, PinValue.Low);
+		IDrivingPin pin = _pins.Single(p => p.Direction == GetOppositeDirection(_turnDirection!.Value));
+		_controller.Write(pin.Number, PinValue.Low);
 
-		PwmChannel pwmChannel = PwmChannels.Single(x => x.Key is Direction.Left or Direction.Right).Value;
+		PwmChannel pwmChannel = _pwmChannels.Single(x => x.Key is Direction.Left or Direction.Right).Value;
 		pwmChannel.Stop();
 		pwmChannel.DutyCycle = _turnPower;
 		pwmChannel.Start();
 
 		pin = _pins.Single(p => p.Direction == _turnDirection);
-		Controller.Write(pin.Number, PinValue.High);
+		_controller.Write(pin.Number, PinValue.High);
 	}
 
 	private void UpdateDrivePins() {
@@ -144,27 +144,27 @@ public class DrivingModule : ICarModule, IDisposable {
 	}
 
 	private void SetDrivePinsLow() {
-		IPin pin = _pins.Single(p => p.Direction == Direction.Forward);
-		Controller.Write(pin.Number, PinValue.Low);
+		IDrivingPin pin = _pins.Single(p => p.Direction == Direction.Forward);
+		_controller.Write(pin.Number, PinValue.Low);
 
 		pin = _pins.Single(p => p.Direction == Direction.Back);
-		Controller.Write(pin.Number, PinValue.Low);
+		_controller.Write(pin.Number, PinValue.Low);
 
-		PwmChannel pwmChannel = PwmChannels.Single(x => x.Key is Direction.Forward or Direction.Back).Value;
+		PwmChannel pwmChannel = _pwmChannels.Single(x => x.Key is Direction.Forward or Direction.Back).Value;
 		pwmChannel.Stop();
 	}
 
 	private void ToggleDrivePins() {
-		IPin pin = _pins.Single(p => p.Direction == GetOppositeDirection(_driveDirection!.Value));
-		Controller.Write(pin.Number, PinValue.Low);
+		IDrivingPin pin = _pins.Single(p => p.Direction == GetOppositeDirection(_driveDirection!.Value));
+		_controller.Write(pin.Number, PinValue.Low);
 
-		PwmChannel pwmChannel = PwmChannels.Single(x => x.Key is Direction.Forward or Direction.Back).Value;
+		PwmChannel pwmChannel = _pwmChannels.Single(x => x.Key is Direction.Forward or Direction.Back).Value;
 		pwmChannel.Stop();
 		pwmChannel.DutyCycle = _drivePower;
 		pwmChannel.Start();
 
 		pin = _pins.Single(p => p.Direction == _driveDirection);
-		Controller.Write(pin.Number, PinValue.High);
+		_controller.Write(pin.Number, PinValue.High);
 	}
 
 	private static Direction GetOppositeDirection(Direction direction) {
@@ -181,6 +181,5 @@ public class DrivingModule : ICarModule, IDisposable {
 		GC.SuppressFinalize(this);
 		Stop();
 		DeinitializePins();
-		Controller.Dispose();
 	}
 }

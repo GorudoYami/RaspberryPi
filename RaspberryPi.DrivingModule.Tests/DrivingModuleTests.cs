@@ -24,7 +24,7 @@ public class DrivingModuleTests {
 		_mockedOptions!.Setup(x => x.Value)
 			.Returns(new DrivingModuleOptions() { Pins = new List<IPin>() });
 
-		Assert.True(false);
+		Assert.That(false, Is.True);
 	}
 
 	[TearDown]

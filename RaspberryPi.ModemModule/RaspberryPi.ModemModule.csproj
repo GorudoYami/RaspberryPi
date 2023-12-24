@@ -1,18 +1,19 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Platforms>AnyCPU;ARM32;ARM64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Device.Gpio" Version="3.1.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\GorudoYami\GorudoYami.Common\GorudoYami.Common.csproj" />
+    <ProjectReference Include="..\RaspberryPi.Common\RaspberryPi.Common.csproj" />
   </ItemGroup>
 
 </Project>

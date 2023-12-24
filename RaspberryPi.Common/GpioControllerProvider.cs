@@ -1,0 +1,40 @@
+﻿using RaspberryPi.Common.Interfaces;
+using System.Device;
+using System.Device.Gpio;
+
+namespace RaspberryPi.Common;
+
+public class GpioControllerProvider : IGpioControllerProvider, IDisposable {
+	public int PinCount => _controller.PinCount;
+	public PinNumberingScheme NumberingScheme => _controller.NumberingScheme;
+
+	private readonly GpioController _controller;
+
+	public GpioControllerProvider() {
+		_controller = new GpioController();
+	}
+
+	public PinValue Read(int pinNumber) => _controller.Read(pinNumber);
+	public void Read(Span<PinValuePair> pinValuePairs) => _controller.Read(pinValuePairs);
+	public void Write(ReadOnlySpan<PinValuePair> pinValuePairs) => _controller.Write(pinValuePairs);
+	public void Write(int pinNumber, PinValue value) => _controller.Write(pinNumber, value);
+	public GpioPin OpenPin(int pinNumber) => _controller.OpenPin(pinNumber);
+	public GpioPin OpenPin(int pinNumber, PinMode pinMode) => _controller.OpenPin(pinNumber, pinMode);
+	public GpioPin OpenPin(int pinNumber, PinMode pinMode, PinValue initialValue) => _controller.OpenPin(pinNumber, pinMode, initialValue);
+	public void ClosePin(int pinNumber) => _controller.ClosePin(pinNumber);
+	public PinMode GetPinMode(int pinNumber) => _controller.GetPinMode(pinNumber);
+	public void Toggle(int pinNumber) => _controller.Toggle(pinNumber);
+	public bool IsPinOpen(int pinNumber) => _controller.IsPinOpen(pinNumber);
+	public bool IsPinModeSupported(int pinNumber, PinMode mode) => _controller.IsPinModeSupported(pinNumber, mode);
+	public ComponentInformation QueryComponentInformation() => _controller.QueryComponentInformation();
+	public void Subscribe(int pinNumber, PinEventTypes eventTypes, PinChangeEventHandler callback) => _controller.RegisterCallbackForPinValueChangedEvent(pinNumber, eventTypes, callback);
+	public void Unsubscribe(int pinNumber, PinChangeEventHandler callback) => _controller.UnregisterCallbackForPinValueChangedEvent(pinNumber, callback);
+	public void SetPinMode(int pinNumber, PinMode mode) => _controller.SetPinMode(pinNumber, mode);
+	public WaitForEventResult WaitForEvent(int pinNumber, PinEventTypes eventTypes, CancellationToken cancellationToken = default) => _controller.WaitForEvent(pinNumber, eventTypes, cancellationToken);
+	public ValueTask<WaitForEventResult> WaitForEventAsync(int pinNumber, PinEventTypes eventTypes, CancellationToken cancellationToken = default) => _controller.WaitForEventAsync(pinNumber, eventTypes, cancellationToken);
+
+	public void Dispose() {
+		GC.SuppressFinalize(this);
+		_controller.Dispose();
+	}
+}

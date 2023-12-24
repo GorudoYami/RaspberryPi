@@ -9,16 +9,20 @@ using GorudoYami.Common.Streams;
 using GorudoYami.Common.Cryptography;
 using RaspberryPi.Common.Utilities;
 using RaspberryPi.Common.Modules;
+using RaspberryPi.Modules.Exceptions;
+using Microsoft.Extensions.Logging;
 
 namespace RaspberryPi.Modules;
 
 public class TcpServerModule : ITcpServerModule, IDisposable, IAsyncDisposable {
 	private readonly Dictionary<IPAddress, TcpClientInfo> _clients;
 	private readonly TcpListener _listener;
+	private readonly ILogger<ITcpServerModule> _logger;
 	private CancellationTokenSource? _cancellationTokenSource;
 	private Task? _listenTask;
 
-	public TcpServerModule(IOptions<TcpServerModuleOptions> options) {
+	public TcpServerModule(IOptions<TcpServerModuleOptions> options, ILogger<ITcpServerModule> logger) {
+		_logger = logger;
 		_clients = [];
 		_listener = new TcpListener(Networking.GetAddressFromHostname(options.Value.Host), options.Value.Port);
 	}
@@ -104,25 +108,32 @@ public class TcpServerModule : ITcpServerModule, IDisposable, IAsyncDisposable {
 			IPAddress clientAddress = (client.Client.RemoteEndPoint as IPEndPoint)?.Address
 				?? throw new InvalidOperationException("Client remote endpoint is invalid");
 
-			if (client.Connected && await InitializeCommunicationAsync(client, clientAddress, cancellationToken) == false) {
-				CleanupClient(clientAddress, true);
+			if (client.Connected) {
+				try {
+					await InitializeCommunicationAsync(client, clientAddress, cancellationToken);
+				}
+				catch (Exception ex) {
+					_logger.LogError(ex, "Communication initialization with client {ClientAddress} failed", clientAddress.ToString());
+					CleanupClient(clientAddress, true);
+				}
 			}
 		}
 	}
 
-	private async Task<bool> InitializeCommunicationAsync(TcpClient client, IPAddress clientAddress, CancellationToken cancellationToken) {
+	private async Task InitializeCommunicationAsync(TcpClient client, IPAddress clientAddress, CancellationToken cancellationToken) {
 		var clientStream = client.GetStream();
 		using var clientReader = new ByteStreamReader(clientStream, true);
 		using RSA rsa = RSA.Create(CryptographyKeySizes.RsaKeySizeBits);
 
 		byte[] data = await clientReader.ReadMessageAsync(cancellationToken: cancellationToken);
-		if (data.Length != CryptographyKeySizes.RsaKeySizeBits / 8) {
-			return false;
+		int expectedLength = CryptographyKeySizes.RsaKeySizeBits / 8 + CryptographyKeySizes.RsaKeyInfoSizeBits / 8;
+		if (data.Length != expectedLength) {
+			throw new InitializeCommunicationException($"Received public key has an invalid size. Expected: {expectedLength}. Actual: {data.Length}.");
 		}
 
 		rsa.ImportRSAPublicKey(data, out int bytesRead);
 		if (bytesRead != data.Length) {
-			return false;
+			throw new InitializeCommunicationException($"Public key has not been read fully. Expected: {data.Length}. Read: {bytesRead}.");
 		}
 
 		Aes? aes = null;
@@ -140,15 +151,14 @@ public class TcpServerModule : ITcpServerModule, IDisposable, IAsyncDisposable {
 			await clientStream.WriteAsync(Encoding.ASCII.GetBytes("\r\n"), cancellationToken);
 
 			csrwClient = new CryptoStreamReaderWriter(aes.CreateEncryptor(), aes.CreateDecryptor(), clientStream);
-			if (await csrwClient.ReadLineAsync() == "OK") {
+			string response = await csrwClient.ReadLineAsync(cancellationToken);
+			if (response == "OK") {
 				_clients.Add(clientAddress, new TcpClientInfo(client, csrwClient));
 				result = true;
 			}
 			else {
-				result = false;
+				throw new InitializeCommunicationException($"Did not receive correct response. Expected: OK. Received: {response}");
 			}
-
-			return result;
 		}
 		finally {
 			if (result == false) {
