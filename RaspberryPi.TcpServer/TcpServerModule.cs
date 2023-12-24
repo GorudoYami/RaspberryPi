@@ -1,18 +1,16 @@
-﻿using System.Net;
-using System.Net.Sockets;
-using System.Text;
-using System.Security.Cryptography;
-using RaspberryPi.Common;
-using Microsoft.Extensions.Options;
-using RaspberryPi.Modules.Models;
+﻿using GorudoYami.Common.Cryptography;
 using GorudoYami.Common.Streams;
-using GorudoYami.Common.Cryptography;
-using RaspberryPi.Common.Utilities;
-using RaspberryPi.Common.Modules;
-using RaspberryPi.Modules.Exceptions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using RaspberryPi.Common.Modules;
+using RaspberryPi.Common.Utilities;
+using RaspberryPi.TcpServer.Models;
+using System.Net;
+using System.Net.Sockets;
+using System.Security.Cryptography;
+using System.Text;
 
-namespace RaspberryPi.Modules;
+namespace RaspberryPi.TcpServer;
 
 public class TcpServerModule : ITcpServerModule, IDisposable, IAsyncDisposable {
 	private readonly Dictionary<IPAddress, TcpClientInfo> _clients;
@@ -121,9 +119,9 @@ public class TcpServerModule : ITcpServerModule, IDisposable, IAsyncDisposable {
 	}
 
 	private async Task InitializeCommunicationAsync(TcpClient client, IPAddress clientAddress, CancellationToken cancellationToken) {
-		var clientStream = client.GetStream();
+		NetworkStream clientStream = client.GetStream();
 		using var clientReader = new ByteStreamReader(clientStream, true);
-		using RSA rsa = RSA.Create(CryptographyKeySizes.RsaKeySizeBits);
+		using var rsa = RSA.Create(CryptographyKeySizes.RsaKeySizeBits);
 
 		byte[] data = await clientReader.ReadMessageAsync(cancellationToken: cancellationToken);
 		int expectedLength = CryptographyKeySizes.RsaKeySizeBits / 8 + CryptographyKeySizes.RsaKeyInfoSizeBits / 8;
@@ -172,7 +170,7 @@ public class TcpServerModule : ITcpServerModule, IDisposable, IAsyncDisposable {
 	}
 
 	private static Aes GetAes() {
-		Aes aes = Aes.Create();
+		var aes = Aes.Create();
 		aes.KeySize = CryptographyKeySizes.AesKeySizeBits;
 		aes.Key = RandomNumberGenerator.GetBytes(CryptographyKeySizes.AesKeySizeBits / 8);
 		aes.IV = RandomNumberGenerator.GetBytes(CryptographyKeySizes.AesIvSizeBits / 8);

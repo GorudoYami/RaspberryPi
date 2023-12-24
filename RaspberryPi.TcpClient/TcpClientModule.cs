@@ -3,12 +3,12 @@ using GorudoYami.Common.Streams;
 using Microsoft.Extensions.Options;
 using RaspberryPi.Common.Modules;
 using RaspberryPi.Common.Utilities;
-using RaspberryPi.Modules.Models;
+using RaspberryPi.TcpClient.Models;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace RaspberryPi.Modules;
+namespace RaspberryPi.TcpClient;
 
 public class TcpClientModule : ITcpClientModule, IDisposable, IAsyncDisposable {
 	private readonly TcpClientModuleOptions _options;
@@ -36,7 +36,7 @@ public class TcpClientModule : ITcpClientModule, IDisposable, IAsyncDisposable {
 			SendTimeout = _options.TimeoutSeconds * 1000,
 		};
 
-		Task timeoutTask = Task.Delay(_options.TimeoutSeconds * 1000, cancellationToken);
+		var timeoutTask = Task.Delay(_options.TimeoutSeconds * 1000, cancellationToken);
 		Task connectTask = _server.ConnectAsync(_options.ServerHost, _options.ServerPort);
 		await Task.WhenAny(timeoutTask, connectTask);
 
@@ -47,7 +47,7 @@ public class TcpClientModule : ITcpClientModule, IDisposable, IAsyncDisposable {
 		var serverStream = _server!.GetStream();
 		_serverUnencryptedReader = new ByteStreamReader(serverStream, true);
 
-		using RSA rsa = RSA.Create(CryptographyKeySizes.RsaKeySizeBits);
+		using var rsa = RSA.Create(CryptographyKeySizes.RsaKeySizeBits);
 		byte[] test = rsa.ExportRSAPublicKey();
 		string test2 = Encoding.ASCII.GetString(test);
 		await serverStream.WriteAsync(test, cancellationToken);

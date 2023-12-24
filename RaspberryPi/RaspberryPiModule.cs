@@ -1,6 +1,5 @@
 ﻿using RaspberryPi.Common.Modules;
 
-
 namespace RaspberryPi;
 
 public class RaspberryPiModule : IRaspberryPiModule {

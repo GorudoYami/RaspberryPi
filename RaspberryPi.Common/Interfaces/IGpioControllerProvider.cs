@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Device;
+﻿using System.Device;
 using System.Device.Gpio;
 using System.Device.Pwm;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RaspberryPi.Common.Interfaces;
 

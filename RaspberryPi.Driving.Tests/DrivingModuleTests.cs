@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.Options;
 using Moq;
 using NUnit.Framework;
-using RaspberryPi.Modules.Models;
+using RaspberryPi.Driving.Models;
 
-namespace RaspberryPi.Modules.Tests;
+namespace RaspberryPi.Driving.Tests;
 
 public class DrivingModuleTests {
 	private DrivingModule? _drivingModule;

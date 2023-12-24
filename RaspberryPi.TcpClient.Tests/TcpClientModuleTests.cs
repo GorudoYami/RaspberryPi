@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.Options;
 using Moq;
 using NUnit.Framework;
-using RaspberryPi.Modules.Models;
+using RaspberryPi.TcpClient.Models;
 
-namespace RaspberryPi.Modules.Tests;
+namespace RaspberryPi.TcpClient.Tests;
 
 [TestFixture]
 public class TcpClientModuleTests {

@@ -2,7 +2,7 @@
 using NUnit.Framework;
 using RaspberryPi.Common.Modules;
 
-namespace RaspberryPi.Modules.Tests;
+namespace RaspberryPi.Tests;
 
 [TestFixture]
 public class RaspberryPiTests {

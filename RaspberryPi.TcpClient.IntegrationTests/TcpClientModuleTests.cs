@@ -1,12 +1,13 @@
-﻿using Castle.Core.Logging;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using NUnit.Framework;
 using RaspberryPi.Common.Modules;
-using RaspberryPi.Modules.Models;
+using RaspberryPi.TcpClient.Models;
+using RaspberryPi.TcpServer;
+using RaspberryPi.TcpServer.Models;
 
-namespace RaspberryPi.Modules.Tests;
+namespace RaspberryPi.TcpClient.IntegrationTests;
 
 [TestFixture]
 public class TcpClientModuleTests {

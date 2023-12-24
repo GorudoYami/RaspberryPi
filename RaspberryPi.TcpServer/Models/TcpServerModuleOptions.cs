@@ -1,4 +1,4 @@
-﻿namespace RaspberryPi.Modules.Models;
+﻿namespace RaspberryPi.TcpServer.Models;
 
 public class TcpServerModuleOptions {
 	public required string Host { get; init; }

@@ -1,4 +1,4 @@
-﻿namespace RaspberryPi.Modules;
+﻿namespace RaspberryPi.Modem.Enums;
 
 public enum ModemPinType {
 	Rx,

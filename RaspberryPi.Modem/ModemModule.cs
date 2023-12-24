@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RaspberryPi.Common.Modules;
-using RaspberryPi.Modules.Models;
+using RaspberryPi.Modem.Models;
 
-namespace RaspberryPi.Modules;
+namespace RaspberryPi.Modem;
 
 public class ModemModule : IModemModule {
 	private readonly ILogger<IModemModule> _logger;

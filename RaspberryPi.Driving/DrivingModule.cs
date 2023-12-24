@@ -1,13 +1,11 @@
 ﻿using Microsoft.Extensions.Options;
 using RaspberryPi.Common.Interfaces;
 using RaspberryPi.Common.Modules;
-using RaspberryPi.Modules.Enums;
-using RaspberryPi.Modules.Exceptions;
-using RaspberryPi.Modules.Models;
+using RaspberryPi.Driving.Models;
 using System.Device.Gpio;
 using System.Device.Pwm;
 
-namespace RaspberryPi.Modules;
+namespace RaspberryPi.Driving;
 
 public class DrivingModule : ICarModule, IDisposable {
 	private readonly ICollection<DrivingPin> _pins;
@@ -106,7 +104,6 @@ public class DrivingModule : ICarModule, IDisposable {
 		UpdateDrivePins();
 		UpdateTurnPins();
 	}
-
 
 	// TODO: Change since it will be a servo
 	private void UpdateTurnPins() {

@@ -1,6 +1,4 @@
-﻿using RaspberryPi.Modules.Enums;
-
-namespace RaspberryPi.Modules.Models;
+﻿namespace RaspberryPi.Driving.Models;
 
 public class DrivingPin(int number, Direction direction) {
 	public int Number { get; init; } = number;

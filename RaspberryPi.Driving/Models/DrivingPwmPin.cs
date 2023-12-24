@@ -1,7 +1,4 @@
-﻿using RaspberryPi.Modules.Enums;
-using System.Device.Gpio;
-
-namespace RaspberryPi.Modules.Models;
+﻿namespace RaspberryPi.Driving.Models;
 
 public class DrivingPwmPin(int number, Direction direction, int pwmChip, int frequency)
 	: DrivingPin(number, direction) {
