@@ -2,35 +2,35 @@
 using Microsoft.Extensions.Options;
 using Moq;
 using NUnit.Framework;
+using RaspberryPi.Client.Models;
 using RaspberryPi.Common.Modules;
-using RaspberryPi.TcpClient.Models;
-using RaspberryPi.TcpServer;
-using RaspberryPi.TcpServer.Models;
+using RaspberryPi.Server;
+using RaspberryPi.Server.Models;
 
-namespace RaspberryPi.TcpClient.IntegrationTests;
+namespace RaspberryPi.Client.IntegrationTests;
 
 [TestFixture]
-public class TcpClientModuleTests {
-	private TcpClientModule? _tcpClientModule;
-	private TcpServerModule? _tcpServerModule;
+public class ClientModuleTests {
+	private ClientModule? _tcpClientModule;
+	private ServerModule? _tcpServerModule;
 
 	[SetUp]
 	public void SetUp() {
-		var clientOptions = new Mock<IOptions<TcpClientModuleOptions>>();
-		clientOptions.Setup(x => x.Value).Returns(new TcpClientModuleOptions() {
+		var clientOptions = new Mock<IOptions<ClientModuleOptions>>();
+		clientOptions.Setup(x => x.Value).Returns(new ClientModuleOptions() {
 			ServerHost = "localhost",
 			ServerPort = 2137,
 			TimeoutSeconds = 10
 		});
-		var serverOptions = new Mock<IOptions<TcpServerModuleOptions>>();
-		serverOptions.Setup(x => x.Value).Returns(new TcpServerModuleOptions() {
+		var serverOptions = new Mock<IOptions<ServerModuleOptions>>();
+		serverOptions.Setup(x => x.Value).Returns(new ServerModuleOptions() {
 			Host = "localhost",
 			Port = 2137
 		});
-		var logger = new Mock<ILogger<ITcpServerModule>>();
+		var logger = new Mock<ILogger<IServerModule>>();
 
-		_tcpClientModule = new TcpClientModule(clientOptions.Object);
-		_tcpServerModule = new TcpServerModule(serverOptions.Object, logger.Object);
+		_tcpClientModule = new ClientModule(clientOptions.Object);
+		_tcpServerModule = new ServerModule(serverOptions.Object, logger.Object);
 	}
 
 	[Test]

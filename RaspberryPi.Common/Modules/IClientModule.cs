@@ -2,7 +2,7 @@
 
 namespace RaspberryPi.Common.Modules;
 
-public interface ITcpClientModule : IModule {
+public interface IClientModule : IModule {
 	Task<bool> ConnectAsync(CancellationToken cancellationToken = default);
 	Task DisconnectAsync();
 	Task ReadAsync(CancellationToken cancellationToken = default);

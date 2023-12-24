@@ -7,11 +7,11 @@ namespace RaspberryPi.Tests;
 [TestFixture]
 public class RaspberryPiTests {
 	private RaspberryPiModule? _raspberryPiModule;
-	private Mock<ITcpClientModule>? _mockedTcpClientModule;
+	private Mock<IClientModule>? _mockedTcpClientModule;
 
 	[SetUp]
 	public void SetUp() {
-		_mockedTcpClientModule = new Mock<ITcpClientModule>();
+		_mockedTcpClientModule = new Mock<IClientModule>();
 	}
 
 	private RaspberryPiModule GetInstance() {

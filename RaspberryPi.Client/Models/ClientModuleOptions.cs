@@ -1,6 +1,6 @@
-﻿namespace RaspberryPi.TcpClient.Models;
+﻿namespace RaspberryPi.Client.Models;
 
-public class TcpClientModuleOptions {
+public class ClientModuleOptions {
 	public required string ServerHost { get; init; }
 	public required int ServerPort { get; init; }
 	public required int TimeoutSeconds { get; init; }

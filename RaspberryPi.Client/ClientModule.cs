@@ -1,24 +1,24 @@
 ﻿using GorudoYami.Common.Cryptography;
 using GorudoYami.Common.Streams;
 using Microsoft.Extensions.Options;
+using RaspberryPi.Client.Models;
 using RaspberryPi.Common.Modules;
 using RaspberryPi.Common.Utilities;
-using RaspberryPi.TcpClient.Models;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace RaspberryPi.TcpClient;
+namespace RaspberryPi.Client;
 
-public class TcpClientModule : ITcpClientModule, IDisposable, IAsyncDisposable {
-	private readonly TcpClientModuleOptions _options;
+public class ClientModule : IClientModule, IDisposable, IAsyncDisposable {
+	private readonly ClientModuleOptions _options;
 
 	private TcpClient? _server;
 	private Aes? _serverAes;
 	private CryptoStreamReaderWriter? _serverReaderWriter;
 	private ByteStreamReader? _serverUnencryptedReader;
 
-	public TcpClientModule(IOptions<TcpClientModuleOptions> options) {
+	public ClientModule(IOptions<ClientModuleOptions> options) {
 		_options = options.Value;
 		_server = new TcpClient() {
 			ReceiveTimeout = _options.TimeoutSeconds * 1000,
@@ -44,7 +44,7 @@ public class TcpClientModule : ITcpClientModule, IDisposable, IAsyncDisposable {
 	}
 
 	private async Task<bool> InitializeCommunicationAsync(CancellationToken cancellationToken = default) {
-		var serverStream = _server!.GetStream();
+		NetworkStream serverStream = _server!.GetStream();
 		_serverUnencryptedReader = new ByteStreamReader(serverStream, true);
 
 		using var rsa = RSA.Create(CryptographyKeySizes.RsaKeySizeBits);

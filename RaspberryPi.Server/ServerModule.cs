@@ -4,22 +4,23 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RaspberryPi.Common.Modules;
 using RaspberryPi.Common.Utilities;
-using RaspberryPi.TcpServer.Models;
+using RaspberryPi.Server.Exceptions;
+using RaspberryPi.Server.Models;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace RaspberryPi.TcpServer;
+namespace RaspberryPi.Server;
 
-public class TcpServerModule : ITcpServerModule, IDisposable, IAsyncDisposable {
+public class ServerModule : IServerModule, IDisposable, IAsyncDisposable {
 	private readonly Dictionary<IPAddress, TcpClientInfo> _clients;
 	private readonly TcpListener _listener;
-	private readonly ILogger<ITcpServerModule> _logger;
+	private readonly ILogger<IServerModule> _logger;
 	private CancellationTokenSource? _cancellationTokenSource;
 	private Task? _listenTask;
 
-	public TcpServerModule(IOptions<TcpServerModuleOptions> options, ILogger<ITcpServerModule> logger) {
+	public ServerModule(IOptions<ServerModuleOptions> options, ILogger<IServerModule> logger) {
 		_logger = logger;
 		_clients = [];
 		_listener = new TcpListener(Networking.GetAddressFromHostname(options.Value.Host), options.Value.Port);

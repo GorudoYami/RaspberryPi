@@ -22,9 +22,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\GorudoYami\GorudoYami.Common\GorudoYami.Common.csproj" />
+    <ProjectReference Include="..\RaspberryPi.Client\RaspberryPi.Client.csproj" />
     <ProjectReference Include="..\RaspberryPi.Driving\RaspberryPi.Driving.csproj" />
     <ProjectReference Include="..\RaspberryPi.Modem\RaspberryPi.Modem.csproj" />
-    <ProjectReference Include="..\RaspberryPi.TcpClient\RaspberryPi.TcpClient.csproj" />
   </ItemGroup>
 
   <ItemGroup>

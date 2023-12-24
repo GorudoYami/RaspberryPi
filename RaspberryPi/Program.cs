@@ -3,9 +3,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NLog.Extensions.Logging;
+using RaspberryPi.Client;
+using RaspberryPi.Client.Models;
 using RaspberryPi.Common.Modules;
-using RaspberryPi.TcpClient;
-using RaspberryPi.TcpClient.Models;
 
 namespace RaspberryPi;
 
@@ -26,7 +26,7 @@ public static class Program {
 		IServiceCollection serviceCollection = new ServiceCollection()
 			.AddSingleton(configuration)
 			.AddModule<IRaspberryPiModule, RaspberryPiModule>()
-			.AddModule<ITcpClientModule, TcpClientModule>()
+			.AddModule<IClientModule, ClientModule>()
 			.AddLogging(builder => {
 				builder.ClearProviders();
 				builder.SetMinimumLevel(LogLevel.Debug);
@@ -34,8 +34,8 @@ public static class Program {
 			});
 
 		serviceCollection
-			.AddOptions<TcpClientModuleOptions>()
-			.Bind(configuration.GetRequiredSection(nameof(TcpClientModuleOptions)));
+			.AddOptions<ClientModuleOptions>()
+			.Bind(configuration.GetRequiredSection(nameof(ClientModuleOptions)));
 
 		return serviceCollection.BuildServiceProvider();
 	}

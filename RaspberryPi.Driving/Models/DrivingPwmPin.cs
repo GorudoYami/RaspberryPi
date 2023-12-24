@@ -1,4 +1,6 @@
-﻿namespace RaspberryPi.Driving.Models;
+﻿using RaspberryPi.Driving.Enums;
+
+namespace RaspberryPi.Driving.Models;
 
 public class DrivingPwmPin(int number, Direction direction, int pwmChip, int frequency)
 	: DrivingPin(number, direction) {

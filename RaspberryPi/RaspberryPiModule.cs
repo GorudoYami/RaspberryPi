@@ -3,9 +3,9 @@
 namespace RaspberryPi;
 
 public class RaspberryPiModule : IRaspberryPiModule {
-	private readonly ITcpClientModule _tcpClientModule;
+	private readonly IClientModule _tcpClientModule;
 
-	public RaspberryPiModule(ITcpClientModule tcpClientModule) {
+	public RaspberryPiModule(IClientModule tcpClientModule) {
 		_tcpClientModule = tcpClientModule;
 	}
 

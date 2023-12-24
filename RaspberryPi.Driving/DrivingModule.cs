@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Options;
 using RaspberryPi.Common.Interfaces;
 using RaspberryPi.Common.Modules;
+using RaspberryPi.Driving.Enums;
+using RaspberryPi.Driving.Exceptions;
 using RaspberryPi.Driving.Models;
 using System.Device.Gpio;
 using System.Device.Pwm;

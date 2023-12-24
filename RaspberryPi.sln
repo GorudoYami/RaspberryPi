@@ -7,25 +7,25 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.Common", "Raspb
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.Driving", "RaspberryPi.Driving\RaspberryPi.Driving.csproj", "{4663464F-CD01-427A-9D2E-9DBED5C4C14A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.TcpServer", "RaspberryPi.TcpServer\RaspberryPi.TcpServer.csproj", "{37181A05-724E-4841-A220-844CFCFB7FC4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.Server", "RaspberryPi.Server\RaspberryPi.Server.csproj", "{37181A05-724E-4841-A220-844CFCFB7FC4}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GorudoYami.Common", "..\GorudoYami\GorudoYami.Common\GorudoYami.Common.csproj", "{1EC295DF-AB24-46AC-87C6-2BF44E0B3276}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi", "RaspberryPi\RaspberryPi.csproj", "{C916FDEE-DA2C-458F-9113-A152D6BF61FD}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.TcpClient", "RaspberryPi.TcpClient\RaspberryPi.TcpClient.csproj", "{ACF68662-8D26-4504-A766-B902555400B2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.Client", "RaspberryPi.Client\RaspberryPi.Client.csproj", "{ACF68662-8D26-4504-A766-B902555400B2}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Modules", "Modules", "{DFF02CAA-B468-4EDC-BD3D-F8572B46D5EB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.TcpClient.Tests", "RaspberryPi.TcpClient.Tests\RaspberryPi.TcpClient.Tests.csproj", "{F63E872F-75DA-4F08-BFC9-58F456165DFE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.Client.Tests", "RaspberryPi.Client.Tests\RaspberryPi.Client.Tests.csproj", "{F63E872F-75DA-4F08-BFC9-58F456165DFE}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.Driving.Tests", "RaspberryPi.Driving.Tests\RaspberryPi.Driving.Tests.csproj", "{0D79F7FB-9C0B-4499-BC3F-2AC70E91632D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.TcpServer.Tests", "RaspberryPi.TcpServer.Tests\RaspberryPi.TcpServer.Tests.csproj", "{2F5C23B8-BF4A-4FF6-88EA-699B8BB70508}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.Server.Tests", "RaspberryPi.Server.Tests\RaspberryPi.Server.Tests.csproj", "{2F5C23B8-BF4A-4FF6-88EA-699B8BB70508}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.Tests", "RaspberryPi.Tests\RaspberryPi.Tests.csproj", "{72AB3EE1-35B2-4A4B-916B-CB9931F67442}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.TcpClient.IntegrationTests", "RaspberryPi.TcpClient.IntegrationTests\RaspberryPi.TcpClient.IntegrationTests.csproj", "{DCEB5D80-70F8-40AF-B40F-3D7E72F61253}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.Client.IntegrationTests", "RaspberryPi.Client.IntegrationTests\RaspberryPi.Client.IntegrationTests.csproj", "{DCEB5D80-70F8-40AF-B40F-3D7E72F61253}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.Modem", "RaspberryPi.Modem\RaspberryPi.Modem.csproj", "{C123B1F9-6B8E-4AE4-99C4-F428B515EC2B}"
 EndProject
