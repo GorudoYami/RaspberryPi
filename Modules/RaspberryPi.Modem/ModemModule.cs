@@ -1,9 +1,11 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RaspberryPi.Common.Modules;
+using RaspberryPi.Common.Utilities;
 using RaspberryPi.Modem.Exceptions;
 using RaspberryPi.Modem.Models;
 using System.IO.Ports;
+using System.Net;
 
 namespace RaspberryPi.Modem;
 
@@ -12,12 +14,16 @@ public class ModemModule : IModemModule, IDisposable {
 	private readonly SerialPort _serialPort;
 	private readonly int _targetBaudRate;
 	private readonly int _defaultBaudRate;
+	private readonly IPAddress _serverAddress;
+	private readonly int _serverPort;
 
 	// Need to create SerialPortProvider for unit testing
 	public ModemModule(IOptions<ModemModuleOptions> options, ILogger<IModemModule> logger) {
 		_logger = logger;
 		_targetBaudRate = options.Value.TargetBaudRate;
 		_defaultBaudRate = options.Value.DefaultBaudRate;
+		_serverAddress = Networking.GetAddressFromHostname(options.Value.ServerHost);
+		_serverPort = options.Value.ServerPort;
 		_serialPort = new SerialPort(options.Value.SerialPort) {
 			BaudRate = _targetBaudRate,
 			DataBits = 8,
@@ -53,7 +59,7 @@ public class ModemModule : IModemModule, IDisposable {
 
 	private void Initialize() {
 		InitializeBaudRate();
-		InitializeConnection();
+		SendCommand("AT+CFUN=7", throwOnFail: true);
 	}
 
 	private void InitializeBaudRate() {
@@ -83,12 +89,12 @@ public class ModemModule : IModemModule, IDisposable {
 		}
 	}
 
-	private void InitializeConnection() {
+	public void Start() {
 		SendCommand("AT+CFUN=1", throwOnFail: true);
 		SendCommand("AT+COPS=0", throwOnFail: true);
 		SendCommand("AT+CEREG=1", throwOnFail: true);
-		// SendCommand("AT+CGDCONT=1,\"IP\",\"APN NAME\"", throwOnFail: true); SET APN?
-		SendCommand("AT+CGACT=1,1", throwOnFail: true);
+		SendCommand("AT+CGACT=1", throwOnFail: true);
+		SendCommand($"AT+QIOPEN=\"TCP\",\"{_serverAddress}\",\"{_serverPort}\"", throwOnFail: true);
 	}
 
 	public void Dispose() {
