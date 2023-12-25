@@ -7,6 +7,7 @@
 
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <Platforms>AnyCPU;ARM32;ARM64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,8 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RaspberryPi.Client\RaspberryPi.Client.csproj" />
-    <ProjectReference Include="..\RaspberryPi.Server\RaspberryPi.Server.csproj" />
+    <ProjectReference Include="..\..\RaspberryPi.Driving\RaspberryPi.Driving.csproj" />
   </ItemGroup>
 
 </Project>

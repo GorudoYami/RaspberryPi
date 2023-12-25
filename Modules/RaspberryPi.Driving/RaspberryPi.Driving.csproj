@@ -9,11 +9,11 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.0" />
+    <PackageReference Include="System.Device.Gpio" Version="3.1.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\GorudoYami\GorudoYami.Common\GorudoYami.Common.csproj" />
-    <ProjectReference Include="..\RaspberryPi.Common\RaspberryPi.Common.csproj" />
+    <ProjectReference Include="..\..\RaspberryPi.Common\RaspberryPi.Common.csproj" />
   </ItemGroup>
 
 </Project>

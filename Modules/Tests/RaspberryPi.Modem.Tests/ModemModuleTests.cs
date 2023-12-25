@@ -21,7 +21,7 @@ public class ModemModuleTests {
 	public void SetUp() {
 		_mockedOptions = new Mock<IOptions<ModemModuleOptions>>();
 		_mockedOptions.Setup(x => x.Value)
-			.Returns(new ModemModuleOptions() { SerialPort = "xd" });
+			.Returns(new ModemModuleOptions() { SerialPort = "xd", DefaultBaudRate = 115200, TargetBaudRate = 40000 });
 		_mockedLogger = new Mock<ILogger<IModemModule>>();
 
 		_modemModule = null;

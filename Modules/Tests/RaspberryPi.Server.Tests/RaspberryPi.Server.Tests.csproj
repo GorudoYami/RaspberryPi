@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RaspberryPi.Server\RaspberryPi.Server.csproj" />
+    <ProjectReference Include="..\..\RaspberryPi.Server\RaspberryPi.Server.csproj" />
   </ItemGroup>
 
 </Project>

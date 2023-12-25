@@ -17,6 +17,7 @@ public class ModemModule : IModemModule, IDisposable {
 	public ModemModule(IOptions<ModemModuleOptions> options, ILogger<IModemModule> logger) {
 		_logger = logger;
 		_targetBaudRate = options.Value.TargetBaudRate;
+		_defaultBaudRate = options.Value.DefaultBaudRate;
 		_serialPort = new SerialPort(options.Value.SerialPort) {
 			BaudRate = _targetBaudRate,
 			DataBits = 8,
