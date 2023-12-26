@@ -33,13 +33,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.Modem.Tests", "
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{D06EA8A3-3C4E-4935-B189-2DFCBC497C79}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaspberryPi.Sensors", "Modules\RaspberryPi.Sensors\RaspberryPi.Sensors.csproj", "{D976C7C0-CCE2-497E-A50A-3CA1742E9F34}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.Sensors", "Modules\RaspberryPi.Sensors\RaspberryPi.Sensors.csproj", "{D976C7C0-CCE2-497E-A50A-3CA1742E9F34}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaspberryPi.Camera", "Modules\RaspberryPi.Camera\RaspberryPi.Camera.csproj", "{6EA5A298-8EB7-472E-9D2B-BCF6F9020040}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.Camera", "Modules\RaspberryPi.Camera\RaspberryPi.Camera.csproj", "{6EA5A298-8EB7-472E-9D2B-BCF6F9020040}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaspberryPi.Camera.Tests", "Modules\Tests\RaspberryPi.Camera.Tests\RaspberryPi.Camera.Tests.csproj", "{0FF8DABF-482E-4089-891E-26702E907945}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.Camera.Tests", "Modules\Tests\RaspberryPi.Camera.Tests\RaspberryPi.Camera.Tests.csproj", "{0FF8DABF-482E-4089-891E-26702E907945}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaspberryPi.Sensors.Tests", "Modules\Tests\RaspberryPi.Sensors.Tests\RaspberryPi.Sensors.Tests.csproj", "{7853D2CA-A20A-475B-9752-FCB4A47CBF84}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.Sensors.Tests", "Modules\Tests\RaspberryPi.Sensors.Tests\RaspberryPi.Sensors.Tests.csproj", "{7853D2CA-A20A-475B-9752-FCB4A47CBF84}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaspberryPi.Modem.IntegrationTests", "RaspberryPi.Modem.IntegrationTests\RaspberryPi.Modem.IntegrationTests.csproj", "{8DE5E31D-F4C6-4767-AD24-82F7CBA6A563}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -325,6 +327,22 @@ Global
 		{7853D2CA-A20A-475B-9752-FCB4A47CBF84}.Release|ARM64.Build.0 = Release|Any CPU
 		{7853D2CA-A20A-475B-9752-FCB4A47CBF84}.Release|x64.ActiveCfg = Release|Any CPU
 		{7853D2CA-A20A-475B-9752-FCB4A47CBF84}.Release|x64.Build.0 = Release|Any CPU
+		{8DE5E31D-F4C6-4767-AD24-82F7CBA6A563}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8DE5E31D-F4C6-4767-AD24-82F7CBA6A563}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8DE5E31D-F4C6-4767-AD24-82F7CBA6A563}.Debug|ARM32.ActiveCfg = Debug|Any CPU
+		{8DE5E31D-F4C6-4767-AD24-82F7CBA6A563}.Debug|ARM32.Build.0 = Debug|Any CPU
+		{8DE5E31D-F4C6-4767-AD24-82F7CBA6A563}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{8DE5E31D-F4C6-4767-AD24-82F7CBA6A563}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{8DE5E31D-F4C6-4767-AD24-82F7CBA6A563}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8DE5E31D-F4C6-4767-AD24-82F7CBA6A563}.Debug|x64.Build.0 = Debug|Any CPU
+		{8DE5E31D-F4C6-4767-AD24-82F7CBA6A563}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8DE5E31D-F4C6-4767-AD24-82F7CBA6A563}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8DE5E31D-F4C6-4767-AD24-82F7CBA6A563}.Release|ARM32.ActiveCfg = Release|Any CPU
+		{8DE5E31D-F4C6-4767-AD24-82F7CBA6A563}.Release|ARM32.Build.0 = Release|Any CPU
+		{8DE5E31D-F4C6-4767-AD24-82F7CBA6A563}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{8DE5E31D-F4C6-4767-AD24-82F7CBA6A563}.Release|ARM64.Build.0 = Release|Any CPU
+		{8DE5E31D-F4C6-4767-AD24-82F7CBA6A563}.Release|x64.ActiveCfg = Release|Any CPU
+		{8DE5E31D-F4C6-4767-AD24-82F7CBA6A563}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -344,6 +362,7 @@ Global
 		{6EA5A298-8EB7-472E-9D2B-BCF6F9020040} = {DFF02CAA-B468-4EDC-BD3D-F8572B46D5EB}
 		{0FF8DABF-482E-4089-891E-26702E907945} = {D06EA8A3-3C4E-4935-B189-2DFCBC497C79}
 		{7853D2CA-A20A-475B-9752-FCB4A47CBF84} = {D06EA8A3-3C4E-4935-B189-2DFCBC497C79}
+		{8DE5E31D-F4C6-4767-AD24-82F7CBA6A563} = {D06EA8A3-3C4E-4935-B189-2DFCBC497C79}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {05E0FE84-CDEB-4056-BE83-86645B030CAA}

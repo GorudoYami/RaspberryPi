@@ -4,6 +4,7 @@ using Moq;
 using NUnit.Framework;
 using RaspberryPi.Common.Modules;
 using RaspberryPi.Server.Models;
+using System.Diagnostics;
 
 namespace RaspberryPi.Server.Tests;
 
@@ -16,6 +17,14 @@ public class ServerModuleTests {
 	[SetUp]
 	public void SetUp() {
 		_mockedLogger = new Mock<ILogger<IServerModule>>();
+		_mockedLogger.Setup(x => x.Log(
+			It.IsAny<LogLevel>(),
+			It.IsAny<EventId>(),
+			It.IsAny<object>(),
+			It.IsAny<Exception?>(),
+			It.IsAny<Func<object, Exception?, string>>()))
+			.Callback<LogLevel, EventId, object, Exception, Func<object, Exception, string>>((logLevel, eventId, state, exception, formatter)
+				=> Debug.WriteLine(formatter?.Invoke(state, exception)));
 		_mockedOptions = new Mock<IOptions<ServerModuleOptions>>();
 	}
 

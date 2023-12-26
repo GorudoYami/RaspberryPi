@@ -1,4 +1,5 @@
-﻿using Iot.Device.Media;
+﻿using GorudoYami.Common.Modules;
+using Iot.Device.Media;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RaspberryPi.Camera.Models;
@@ -8,30 +9,46 @@ namespace RaspberryPi.Camera;
 
 public class CameraModule : ICameraModule, IDisposable {
 	public MemoryStream VideoStream { get; init; }
+	public bool IsInitialized { get; private set; }
 
-	private readonly ILogger<ICameraModule> _logger;
-	private readonly VideoDevice _videoDevice;
+	private readonly CameraModuleOptions _options;
+	private VideoDevice? _videoDevice;
 
-	public CameraModule(IOptions<CameraModuleOptions> options, ILogger<ICameraModule> logger) {
-		_logger = logger;
-		var videoSettings = new VideoConnectionSettings(0, (options.Value.Width, options.Value.Height), options.Value.Format);
-		_videoDevice = VideoDevice.Create(videoSettings);
-		_logger.LogDebug("Camera connection status: {CameraConnectionStatus}", _videoDevice.IsOpen);
+	public CameraModule(IOptions<CameraModuleOptions> options) {
+		_options = options.Value;
 		VideoStream = new MemoryStream();
-		_videoDevice.NewImageBufferReady += (s, e) => VideoStream.Write(e.ImageBuffer);
+	}
+
+	public Task InitializeAsync(CancellationToken cancellationToken = default) {
+		return Task.Run(() => {
+			var videoSettings = new VideoConnectionSettings(0, (_options.Width, _options.Height), _options.Format);
+			_videoDevice = VideoDevice.Create(videoSettings);
+			if (_videoDevice.IsOpen == false) {
+				throw new InitializeModuleException("Could not open video device");
+			}
+			IsInitialized = true;
+		}, cancellationToken);
 	}
 
 	public void Start() {
+		if (_videoDevice == null) {
+			throw new InitializeModuleException("Module was not initialized");
+		}
+
 		_videoDevice.StartCaptureContinuous();
 		// Might need to call _videoDevice.CaptureContinous() in separate thread?
 	}
 
 	public void Stop() {
+		if (_videoDevice == null) {
+			throw new InitializeModuleException("Module was not initialized");
+		}
+
 		_videoDevice.StopCaptureContinuous();
 	}
 
 	public void Dispose() {
 		GC.SuppressFinalize(this);
-		_videoDevice.Dispose();
+		_videoDevice?.Dispose();
 	}
 }

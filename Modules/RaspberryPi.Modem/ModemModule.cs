@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using GorudoYami.Common.Modules;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RaspberryPi.Common.Modules;
 using RaspberryPi.Common.Utilities;
@@ -10,6 +11,8 @@ using System.Net;
 namespace RaspberryPi.Modem;
 
 public class ModemModule : IModemModule, IDisposable {
+	public bool IsInitialized { get; private set; }
+
 	private readonly ILogger<IModemModule> _logger;
 	private readonly SerialPort _serialPort;
 	private readonly int _targetBaudRate;
@@ -28,15 +31,14 @@ public class ModemModule : IModemModule, IDisposable {
 			BaudRate = _targetBaudRate,
 			DataBits = 8,
 			StopBits = StopBits.One,
-			Parity = Parity.None
+			Parity = Parity.None,
+			Handshake = Handshake.RequestToSend,
 		};
-
-		Initialize();
 	}
 
 	public bool SendCommand(string command, string expectedResponse = "OK", bool throwOnFail = false) {
 		WriteLine(command);
-		string response = ReadExisting();
+		string response = ReadLine();
 		bool receivedExpectedResponse = response.Contains(expectedResponse);
 
 		if (throwOnFail && receivedExpectedResponse == false) {
@@ -47,19 +49,31 @@ public class ModemModule : IModemModule, IDisposable {
 	}
 
 	private void WriteLine(string message) {
+		while (_serialPort.CtsHolding == false) {
+			Thread.Sleep(5);
+		}
+
 		_logger.LogDebug("[Sent] {Message}", message);
-		_serialPort.Write(message + Environment.NewLine);
+		_serialPort.WriteLine(message);
 	}
 
-	private string ReadExisting() {
-		string message = _serialPort.ReadExisting();
-		_logger.LogDebug("[Received] {Mesponse}", message);
+	private string ReadLine(bool skipEcho = true) {
+		string message = _serialPort.ReadLine();
+		if (skipEcho) {
+			_logger.LogDebug("[Received] [Echo] {Response}", message);
+			message = _serialPort.ReadLine();
+		}
+
+		_logger.LogDebug("[Received] {Response}", message);
 		return message;
 	}
 
-	private void Initialize() {
-		InitializeBaudRate();
-		SendCommand("AT+CFUN=7", throwOnFail: true);
+	public Task InitializeAsync(CancellationToken cancellationToken = default) {
+		return Task.Run(() => {
+			InitializeBaudRate();
+			SendCommand("AT+CFUN=7", throwOnFail: true);
+			IsInitialized = true;
+		}, cancellationToken);
 	}
 
 	private void InitializeBaudRate() {
@@ -73,11 +87,11 @@ public class ModemModule : IModemModule, IDisposable {
 		_serialPort.Open();
 
 		if (SendCommand("AT") == false) {
-			throw new InitializeBaudRateException($"Could not initialize communication with baud rates {_targetBaudRate} and {_defaultBaudRate}");
+			throw new InitializeModuleException($"Could not initialize communication with baud rates {_targetBaudRate} and {_defaultBaudRate}");
 		}
 
 		if (SendCommand($"AT+IPR={_targetBaudRate}") == false) {
-			throw new InitializeBaudRateException($"Could not set target baud rate {_targetBaudRate}");
+			throw new InitializeModuleException($"Could not set target baud rate {_targetBaudRate}");
 		}
 
 		_serialPort.Close();
@@ -85,7 +99,7 @@ public class ModemModule : IModemModule, IDisposable {
 		_serialPort.Open();
 
 		if (SendCommand("AT")) {
-			throw new InitializeBaudRateException($"Could not communicate at target baud rate {_targetBaudRate}");
+			throw new InitializeModuleException($"Could not communicate at target baud rate {_targetBaudRate}");
 		}
 	}
 

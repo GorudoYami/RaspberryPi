@@ -3,7 +3,7 @@
 namespace RaspberryPi.Common.Modules;
 
 public interface IClientModule : IModule {
-	Task<bool> ConnectAsync(CancellationToken cancellationToken = default);
+	Task ConnectAsync(CancellationToken cancellationToken = default);
 	Task DisconnectAsync();
 	Task ReadAsync(CancellationToken cancellationToken = default);
 	Task ReadLineAsync(CancellationToken cancellationToken = default);

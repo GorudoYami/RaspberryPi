@@ -9,19 +9,25 @@ namespace RaspberryPi.Modem.Tests;
 
 [TestFixture]
 public class ModemModuleTests {
+	private readonly ModemModuleOptions _options;
 	private ModemModule? _modemModule;
 	private Mock<IOptions<ModemModuleOptions>>? _mockedOptions;
 	private Mock<ILogger<IModemModule>>? _mockedLogger;
 
 	public ModemModuleTests() {
-
+		_options = new ModemModuleOptions() {
+			DefaultBaudRate = 9600,
+			TargetBaudRate = 4000000,
+			SerialPort = "COM1",
+			ServerHost = "localhost",
+			ServerPort = 2137
+		};
 	}
 
 	[SetUp]
 	public void SetUp() {
 		_mockedOptions = new Mock<IOptions<ModemModuleOptions>>();
-		_mockedOptions.Setup(x => x.Value)
-			.Returns(new ModemModuleOptions() { SerialPort = "xd", DefaultBaudRate = 115200, TargetBaudRate = 40000 });
+		_mockedOptions.Setup(x => x.Value).Returns(_options);
 		_mockedLogger = new Mock<ILogger<IModemModule>>();
 
 		_modemModule = null;

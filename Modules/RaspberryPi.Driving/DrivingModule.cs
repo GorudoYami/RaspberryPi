@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using RaspberryPi.Common.Gpio;
 using RaspberryPi.Common.Gpio.Pwm;
 using RaspberryPi.Common.Modules;
@@ -11,39 +12,43 @@ using System.Device.Pwm;
 namespace RaspberryPi.Driving;
 
 public class DrivingModule : IDrivingModule, IDisposable {
-	private readonly ICollection<DrivingPin> _pins;
+	public bool IsInitialized { get; private set; }
+
 	private readonly IGpioControllerProvider _controller;
+	private readonly ILogger<IDrivingModule> _logger;
+	private readonly ICollection<DrivingPin> _pins;
 	private readonly Dictionary<Direction, IPwmChannelProvider> _pwmChannels;
 	private double _turnPower;
 	private double _drivePower;
 	private Direction? _turnDirection;
 	private Direction? _driveDirection;
 
-	public DrivingModule(IOptions<DrivingModuleOptions> options, IGpioControllerProvider controller) {
+	public DrivingModule(IOptions<DrivingModuleOptions> options, ILogger<IDrivingModule> logger, IGpioControllerProvider controller) {
 		_pins = options.Value.Pins;
 		_turnPower = 0;
 		_drivePower = 0;
 		_turnDirection = null;
 		_driveDirection = null;
 		_controller = controller;
+		_logger = logger;
 		_pwmChannels = [];
-
-		InitializePins();
 	}
 
-	private void InitializePins() {
-		foreach (DrivingPin pin in _pins) {
-			if (pin is DrivingPwmPin pwmPin) {
-				IPwmChannelProvider pwmChannel = _controller.GetPwmChannel(pwmPin.Chip, pwmPin.Number, 400, 0);
-				_pwmChannels.Add(pin.Direction, pwmChannel);
+	public Task InitializeAsync(CancellationToken cancellationToken = default) {
+		return Task.Run(() => {
+			foreach (DrivingPin pin in _pins) {
+				if (pin is DrivingPwmPin pwmPin) {
+					IPwmChannelProvider pwmChannel = _controller.GetPwmChannel(pwmPin.Chip, pwmPin.Number, 400, 0);
+					_pwmChannels.Add(pin.Direction, pwmChannel);
+				}
+				else {
+					_controller.OpenPin(pin.Number, PinMode.Output);
+				}
 			}
-			else {
-				_controller.OpenPin(pin.Number, PinMode.Output);
-			}
-		}
+		}, cancellationToken);
 	}
 
-	private void DeinitializePins() {
+	private void Deinitialize() {
 		foreach (DrivingPin pin in _pins.Where(x => x is not DrivingPwmPin)) {
 			_controller.ClosePin(pin.Number);
 		}
@@ -59,6 +64,7 @@ public class DrivingModule : IDrivingModule, IDisposable {
 			return;
 		}
 
+		_logger.LogDebug("Turning left with {Power} power", power);
 		_turnDirection = Direction.Left;
 		_turnPower = power;
 		UpdateTurnPins();
@@ -69,13 +75,16 @@ public class DrivingModule : IDrivingModule, IDisposable {
 			return;
 		}
 
+		_logger.LogDebug("Turning right with {Power} power", power);
 		_turnDirection = Direction.Right;
 		_turnPower = power;
 		UpdateTurnPins();
 	}
 
 	public void Straight() {
+		_logger.LogDebug("Resetting turn");
 		_turnDirection = null;
+		_turnPower = 0;
 		UpdateTurnPins();
 	}
 
@@ -83,6 +92,8 @@ public class DrivingModule : IDrivingModule, IDisposable {
 		if (_driveDirection == Direction.Forward && _drivePower == power) {
 			return;
 		}
+
+		_logger.LogDebug("Going forward with {Power} power", power);
 		_driveDirection = Direction.Forward;
 		_drivePower = power;
 		UpdateDrivePins();
@@ -93,6 +104,7 @@ public class DrivingModule : IDrivingModule, IDisposable {
 			return;
 		}
 
+		_logger.LogDebug("Going back with {Power} power", power);
 		_driveDirection = Direction.Back;
 		_drivePower = power;
 		UpdateDrivePins();
@@ -104,6 +116,7 @@ public class DrivingModule : IDrivingModule, IDisposable {
 		_drivePower = 0;
 		_turnPower = 0;
 
+		_logger.LogDebug("Stopping");
 		UpdateDrivePins();
 		UpdateTurnPins();
 	}
@@ -150,6 +163,6 @@ public class DrivingModule : IDrivingModule, IDisposable {
 	public void Dispose() {
 		GC.SuppressFinalize(this);
 		Stop();
-		DeinitializePins();
+		Deinitialize();
 	}
 }

@@ -1,7 +1,9 @@
 ﻿using GorudoYami.Common.Cryptography;
+using GorudoYami.Common.Modules;
 using GorudoYami.Common.Streams;
 using Microsoft.Extensions.Options;
 using RaspberryPi.Client.Models;
+using RaspberryPi.Common.Exceptions;
 using RaspberryPi.Common.Modules;
 using RaspberryPi.Common.Utilities;
 using System.Net.Sockets;
@@ -11,8 +13,9 @@ using System.Text;
 namespace RaspberryPi.Client;
 
 public class ClientModule : IClientModule, IDisposable, IAsyncDisposable {
-	private readonly ClientModuleOptions _options;
+	public bool IsInitialized { get; private set; }
 
+	private readonly ClientModuleOptions _options;
 	private TcpClient? _server;
 	private Aes? _serverAes;
 	private CryptoStreamReaderWriter? _serverReaderWriter;
@@ -26,7 +29,16 @@ public class ClientModule : IClientModule, IDisposable, IAsyncDisposable {
 		};
 	}
 
-	public async Task<bool> ConnectAsync(CancellationToken cancellationToken = default) {
+	public async Task InitializeAsync(CancellationToken cancellationToken = default) {
+		try {
+			await ConnectAsync(cancellationToken);
+		}
+		catch (Exception ex) when (ex is not InitializeModuleException) {
+			throw new InitializeModuleException("Failed to initialize module", ex);
+		}
+	}
+
+	public async Task ConnectAsync(CancellationToken cancellationToken = default) {
 		if (_server?.Connected == true) {
 			await DisconnectAsync();
 		}
@@ -40,17 +52,20 @@ public class ClientModule : IClientModule, IDisposable, IAsyncDisposable {
 		Task connectTask = _server.ConnectAsync(_options.ServerHost, _options.ServerPort);
 		await Task.WhenAny(timeoutTask, connectTask);
 
-		return _server.Connected && await InitializeCommunicationAsync(cancellationToken);
+		if (_server.Connected == false) {
+			throw new InitializeCommunicationException("Could not connect to the server at _options.ServerHost");
+		}
+		else {
+			await InitializeCommunicationAsync(cancellationToken);
+		}
 	}
 
-	private async Task<bool> InitializeCommunicationAsync(CancellationToken cancellationToken = default) {
+	private async Task InitializeCommunicationAsync(CancellationToken cancellationToken = default) {
 		NetworkStream serverStream = _server!.GetStream();
 		_serverUnencryptedReader = new ByteStreamReader(serverStream, true);
 
 		using var rsa = RSA.Create(CryptographyKeySizes.RsaKeySizeBits);
-		byte[] test = rsa.ExportRSAPublicKey();
-		string test2 = Encoding.ASCII.GetString(test);
-		await serverStream.WriteAsync(test, cancellationToken);
+		await serverStream.WriteAsync(rsa.ExportRSAPublicKey(), cancellationToken);
 		await serverStream.WriteAsync(Encoding.ASCII.GetBytes("\r\n"), cancellationToken);
 
 		bool result = false;
@@ -59,14 +74,16 @@ public class ClientModule : IClientModule, IDisposable, IAsyncDisposable {
 			_serverAes.KeySize = CryptographyKeySizes.AesKeySizeBits;
 
 			byte[] data = await _serverUnencryptedReader.ReadMessageAsync(cancellationToken);
-			if (data.Length != CryptographyKeySizes.AesKeySizeBits / 8) {
-				return false;
+			int expectedLength = CryptographyKeySizes.AesKeySizeBits / 8;
+			if (data.Length != expectedLength) {
+				throw new InitializeCommunicationException($"Received AES key has an invalid size. Expected {expectedLength}. Actual: {data.Length}");
 			}
 			_serverAes.Key = rsa.Decrypt(data, RSAEncryptionPadding.OaepSHA512);
 
 			data = await _serverUnencryptedReader.ReadMessageAsync(cancellationToken);
-			if (data.Length != CryptographyKeySizes.AesIvSizeBits / 8) {
-				return false;
+			expectedLength = CryptographyKeySizes.AesIvSizeBits / 8;
+			if (data.Length != expectedLength) {
+				throw new InitializeCommunicationException($"Received AES IV has an invalid size. Expected {expectedLength}. Actual: {data.Length}");
 			}
 			_serverAes.IV = rsa.Decrypt(data, RSAEncryptionPadding.OaepSHA512);
 
@@ -74,7 +91,6 @@ public class ClientModule : IClientModule, IDisposable, IAsyncDisposable {
 			await _serverReaderWriter.WriteLineAsync("OK", cancellationToken);
 
 			result = true;
-			return result;
 		}
 		finally {
 			if (result == false) {

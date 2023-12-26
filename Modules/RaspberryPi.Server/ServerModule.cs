@@ -2,9 +2,9 @@
 using GorudoYami.Common.Streams;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using RaspberryPi.Common.Exceptions;
 using RaspberryPi.Common.Modules;
 using RaspberryPi.Common.Utilities;
-using RaspberryPi.Server.Exceptions;
 using RaspberryPi.Server.Models;
 using System.Net;
 using System.Net.Sockets;
@@ -14,6 +14,8 @@ using System.Text;
 namespace RaspberryPi.Server;
 
 public class ServerModule : IServerModule, IDisposable, IAsyncDisposable {
+	public bool IsInitialized { get; private set; }
+
 	private readonly Dictionary<IPAddress, TcpClientInfo> _clients;
 	private readonly TcpListener _listener;
 	private readonly ILogger<IServerModule> _logger;
@@ -24,6 +26,10 @@ public class ServerModule : IServerModule, IDisposable, IAsyncDisposable {
 		_logger = logger;
 		_clients = [];
 		_listener = new TcpListener(Networking.GetAddressFromHostname(options.Value.Host), options.Value.Port);
+	}
+
+	public Task InitializeAsync(CancellationToken cancellationToken = default) {
+		return Task.Run(Start, cancellationToken);
 	}
 
 	public void Start() {

@@ -1,11 +1,15 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Castle.Core.Logging;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using NUnit.Framework;
 using RaspberryPi.Common.Gpio;
 using RaspberryPi.Common.Gpio.Pwm;
+using RaspberryPi.Common.Modules;
 using RaspberryPi.Driving.Enums;
 using RaspberryPi.Driving.Models;
 using System.Device.Gpio;
+using System.Diagnostics;
 
 namespace RaspberryPi.Driving.Tests;
 
@@ -15,6 +19,7 @@ public class DrivingModuleTests {
 	private DrivingModule? _drivingModule;
 	private Mock<IOptions<DrivingModuleOptions>>? _mockedOptions;
 	private Mock<IGpioControllerProvider>? _mockedController;
+	private Mock<ILogger<IDrivingModule>>? _mockedLogger;
 
 	public DrivingModuleTests() {
 		_pins = [
@@ -36,11 +41,21 @@ public class DrivingModuleTests {
 		_mockedController!.Setup(x => x.GetPwmChannel(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<double>()))
 			.Returns(new Mock<IPwmChannelProvider>().Object);
 
+		_mockedLogger = new Mock<ILogger<IDrivingModule>>();
+		_mockedLogger.Setup(x => x.Log(
+			It.IsAny<LogLevel>(),
+			It.IsAny<EventId>(),
+			It.IsAny<object>(),
+			It.IsAny<Exception?>(),
+			It.IsAny<Func<object, Exception?, string>>()))
+			.Callback<LogLevel, EventId, object, Exception, Func<object, Exception, string>>((logLevel, eventId, state, exception, formatter)
+				=> Debug.WriteLine(formatter?.Invoke(state, exception)));
+
 		_drivingModule = null;
 	}
 
 	private DrivingModule GetInstance() {
-		return _drivingModule ??= new DrivingModule(_mockedOptions!.Object, _mockedController!.Object);
+		return _drivingModule ??= new DrivingModule(_mockedOptions!.Object, _mockedLogger!.Object, _mockedController!.Object);
 	}
 
 	[Test]
