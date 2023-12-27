@@ -1,6 +1,6 @@
-﻿
-namespace RaspberryPi.Modem.Exceptions;
+﻿namespace RaspberryPi.Modem.Exceptions;
 
-public class SendCommandException(string message)
-	: Exception(message) {
+public class SendCommandException : Exception {
+	public SendCommandException(string message) : base(message) { }
+	public SendCommandException(string message, Exception innerException) : base(message, innerException) { }
 }

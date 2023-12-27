@@ -11,8 +11,8 @@ namespace RaspberryPi.Client.IntegrationTests;
 
 [TestFixture]
 public class ClientModuleTests {
-	private ClientModule? _clientModule;
-	private ServerModule? _serverModule;
+	private ClientModule _clientModule;
+	private ServerModule _serverModule;
 
 	[SetUp]
 	public void SetUp() {
@@ -24,7 +24,7 @@ public class ClientModuleTests {
 		});
 		var serverOptions = new Mock<IOptions<ServerModuleOptions>>();
 		serverOptions.Setup(x => x.Value).Returns(new ServerModuleOptions() {
-			Host = "localhost",
+			Host = "10.0.1.254",
 			Port = 2137
 		});
 		var logger = new Mock<ILogger<IServerModule>>();
@@ -39,6 +39,14 @@ public class ClientModuleTests {
 		//bool result = await _clientModule!.ConnectAsync();
 
 		Assert.That(true, Is.False);
+	}
+
+	[Test]
+	public async Task Test() {
+		await _serverModule.InitializeAsync();
+		while (true) {
+			Thread.Sleep(100);
+		}
 	}
 
 	[Test]
@@ -57,7 +65,7 @@ public class ClientModuleTests {
 
 	[TearDown]
 	public void TearDown() {
-		_clientModule?.Dispose();
-		_serverModule?.Dispose();
+		_clientModule.Dispose();
+		_serverModule.Dispose();
 	}
 }

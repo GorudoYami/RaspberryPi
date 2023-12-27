@@ -4,44 +4,52 @@ using Moq;
 using NUnit.Framework;
 using RaspberryPi.Common.Modules;
 using RaspberryPi.Modem.Models;
+using RaspberryPi.Server;
+using RaspberryPi.Server.Models;
+using RasperryPi.Common.Tests;
 using System.Diagnostics;
-using System.IO.Ports;
 
 namespace RaspberryPi.Modem.IntegrationTests;
 
 [TestFixture]
 public class ModemModuleIntegrationTests {
-	private readonly ModemModuleOptions _options;
+	private readonly ModemModuleOptions _modemOptions;
+	private readonly ServerModuleOptions _serverOptions;
 
-	private Mock<ILogger<IModemModule>> _mockedLogger;
-	private Mock<IOptions<ModemModuleOptions>> _mockedOptions;
+	private Mock<ILogger<IModemModule>> _mockedModemLogger;
+	private Mock<ILogger<IServerModule>> _mockedServerLogger;
+	private Mock<IOptions<ModemModuleOptions>> _mockedModemOptions;
+	private Mock<IOptions<ServerModuleOptions>> _mockedServerOptions;
 
+	private ServerModule? _serverModule;
 	private ModemModule? _modemModule;
 
 	public ModemModuleIntegrationTests() {
-		_options = new ModemModuleOptions() {
+		_modemOptions = new ModemModuleOptions() {
+			SerialPort = "COM7",
+			DefaultTimeoutSeconds = 5,
 			DefaultBaudRate = 9600,
 			TargetBaudRate = 4000000,
-			SerialPort = "COM7",
-			ServerHost = "10.0.0.1",
+			ServerHost = "93.176.248.32",
 			ServerPort = 2137
+		};
+
+		_serverOptions = new ServerModuleOptions() {
+			Host = "10.0.1.5",
+			Port = 2137,
 		};
 	}
 
 	[SetUp]
 	public void SetUp() {
-		_mockedLogger = new Mock<ILogger<IModemModule>>();
-		_mockedLogger.Setup(x => x.Log(
-			It.IsAny<LogLevel>(),
-			It.IsAny<EventId>(),
-			It.IsAny<object>(),
-			It.IsAny<Exception?>(),
-			It.IsAny<Func<object, Exception?, string>>()))
-			.Callback<LogLevel, EventId, object, Exception, Func<object, Exception, string>>((logLevel, eventId, state, exception, formatter)
-				=> Debug.WriteLine(formatter?.Invoke(state, exception)));
+		_mockedModemLogger = MockedLoggerProvider.GetMockedLogger<IModemModule>();
+		_mockedServerLogger = MockedLoggerProvider.GetMockedLogger<IServerModule>();
 
-		_mockedOptions = new Mock<IOptions<ModemModuleOptions>>();
-		_mockedOptions.Setup(x => x.Value).Returns(_options);
+		_mockedModemOptions = new Mock<IOptions<ModemModuleOptions>>();
+		_mockedModemOptions.Setup(x => x.Value).Returns(_modemOptions);
+
+		_mockedServerOptions = new Mock<IOptions<ServerModuleOptions>>();
+		_mockedServerOptions.Setup(x => x.Value).Returns(_serverOptions);
 	}
 
 	[TearDown]
@@ -50,8 +58,12 @@ public class ModemModuleIntegrationTests {
 		_modemModule = null;
 	}
 
+	private ServerModule CreateServerInstance() {
+		return _serverModule ??= new ServerModule(_mockedServerOptions.Object, _mockedServerLogger.Object);
+	}
+
 	private ModemModule CreateInstance() {
-		return _modemModule ??= new ModemModule(_mockedOptions.Object, _mockedLogger.Object);
+		return _modemModule ??= new ModemModule(_mockedModemOptions.Object, _mockedModemLogger.Object);
 	}
 
 	[Test]
@@ -59,5 +71,15 @@ public class ModemModuleIntegrationTests {
 		CreateInstance();
 
 		Assert.DoesNotThrowAsync(() => _modemModule!.InitializeAsync());
+	}
+
+	[Test]
+	public async Task Start_ServerWorking_DoesNotThrow() {
+		CreateServerInstance();
+		CreateInstance();
+		await _modemModule!.InitializeAsync();
+		_serverModule!.Start();
+
+		Assert.DoesNotThrow(_modemModule.StartAsync);
 	}
 }
