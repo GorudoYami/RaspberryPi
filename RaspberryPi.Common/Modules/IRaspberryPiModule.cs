@@ -3,5 +3,5 @@
 namespace RaspberryPi.Common.Modules;
 
 public interface IRaspberryPiModule : IModule {
-	void Run();
+	Task RunAsync();
 }

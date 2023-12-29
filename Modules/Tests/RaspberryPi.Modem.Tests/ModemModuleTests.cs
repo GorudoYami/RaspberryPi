@@ -20,7 +20,8 @@ public class ModemModuleTests {
 			TargetBaudRate = 4000000,
 			SerialPort = "COM1",
 			ServerHost = "localhost",
-			ServerPort = 2137
+			ServerPort = 2137,
+			TimeoutSeconds = 5
 		};
 	}
 

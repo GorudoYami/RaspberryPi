@@ -12,6 +12,7 @@ using System.Device.Pwm;
 namespace RaspberryPi.Driving;
 
 public class DrivingModule : IDrivingModule, IDisposable {
+	public bool LazyInitialization => false;
 	public bool IsInitialized { get; private set; }
 
 	private readonly IGpioControllerProvider _controller;

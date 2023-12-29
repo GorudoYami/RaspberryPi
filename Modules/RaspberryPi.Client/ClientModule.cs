@@ -6,6 +6,7 @@ using RaspberryPi.Client.Models;
 using RaspberryPi.Common.Exceptions;
 using RaspberryPi.Common.Modules;
 using RaspberryPi.Common.Utilities;
+using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
@@ -13,7 +14,10 @@ using System.Text;
 namespace RaspberryPi.Client;
 
 public class ClientModule : IClientModule, IDisposable, IAsyncDisposable {
+	public bool LazyInitialization => true;
 	public bool IsInitialized { get; private set; }
+	public IPAddress ServerAddress => Networking.GetAddressFromHostname(_options.ServerHost);
+	public bool Connected => IsInitialized;
 
 	private readonly ClientModuleOptions _options;
 	private TcpClient? _server;

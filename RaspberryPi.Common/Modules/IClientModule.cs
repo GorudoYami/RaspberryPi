@@ -1,8 +1,9 @@
 ﻿using GorudoYami.Common.Modules;
+using System.Net;
 
 namespace RaspberryPi.Common.Modules;
 
-public interface IClientModule : IModule {
+public interface IClientModule : INetworkModule {
 	Task ConnectAsync(CancellationToken cancellationToken = default);
 	Task DisconnectAsync();
 	Task ReadAsync(CancellationToken cancellationToken = default);

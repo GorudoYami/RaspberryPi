@@ -14,6 +14,7 @@ using System.Text;
 namespace RaspberryPi.Server;
 
 public class ServerModule : IServerModule, IDisposable, IAsyncDisposable {
+	public bool LazyInitialization => true;
 	public bool IsInitialized { get; private set; }
 
 	private readonly Dictionary<IPAddress, TcpClientInfo> _clients;

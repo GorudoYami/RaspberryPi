@@ -8,8 +8,9 @@ using RaspberryPi.Common.Modules;
 namespace RaspberryPi.Camera;
 
 public class CameraModule : ICameraModule, IDisposable {
-	public MemoryStream VideoStream { get; init; }
+	public bool LazyInitialization => false;
 	public bool IsInitialized { get; private set; }
+	public MemoryStream VideoStream { get; init; }
 
 	private readonly CameraModuleOptions _options;
 	private VideoDevice? _videoDevice;

@@ -11,18 +11,19 @@ using RaspberryPi.Modem.Models;
 using System.IO.Ports;
 using System.Net;
 using System.Security.Cryptography;
-using System.Threading;
 
 namespace RaspberryPi.Modem;
 
 public class ModemModule : IModemModule, IDisposable {
+	public bool LazyInitialization => false;
 	public bool IsInitialized { get; private set; }
+	public IPAddress ServerAddress { get; }
+	public bool Connected => _serverReaderWriter != null;
 
 	private readonly ILogger<IModemModule> _logger;
 	private readonly SerialPort _serialPort;
 	private readonly int _targetBaudRate;
 	private readonly int _defaultBaudRate;
-	private readonly IPAddress _serverAddress;
 	private readonly int _serverPort;
 
 	private ByteStreamReader? _serverUnencryptedReader;
@@ -34,7 +35,7 @@ public class ModemModule : IModemModule, IDisposable {
 		_logger = logger;
 		_targetBaudRate = options.Value.TargetBaudRate;
 		_defaultBaudRate = options.Value.DefaultBaudRate;
-		_serverAddress = Networking.GetAddressFromHostname(options.Value.ServerHost);
+		ServerAddress = Networking.GetAddressFromHostname(options.Value.ServerHost);
 		_serverPort = options.Value.ServerPort;
 		_serialPort = new SerialPort(options.Value.SerialPort) {
 			BaudRate = _targetBaudRate,
@@ -42,8 +43,8 @@ public class ModemModule : IModemModule, IDisposable {
 			StopBits = StopBits.One,
 			Parity = Parity.None,
 			Handshake = Handshake.RequestToSend,
-			ReadTimeout = options.Value.DefaultTimeoutSeconds * 1000,
-			WriteTimeout = options.Value.DefaultTimeoutSeconds * 1000,
+			ReadTimeout = options.Value.TimeoutSeconds * 1000,
+			WriteTimeout = options.Value.TimeoutSeconds * 1000,
 			NewLine = "\r\n",
 		};
 	}
@@ -145,7 +146,7 @@ public class ModemModule : IModemModule, IDisposable {
 		SendCommand("AT+CSTT=\"internet\"", throwOnFail: true);
 		SendCommand("AT+CIICR", throwOnFail: true);
 		SendCommand("AT+CIFSR", throwOnFail: true);
-		SendCommand($"AT+CIPSTART=\"TCP\",\"{_serverAddress}\",\"{_serverPort}\"", throwOnFail: true);
+		SendCommand($"AT+CIPSTART=\"TCP\",\"{ServerAddress}\",\"{_serverPort}\"", throwOnFail: true);
 
 		await InitializeCommunicationAsync(cancellationToken);
 	}

@@ -27,7 +27,7 @@ public class ModemModuleIntegrationTests {
 	public ModemModuleIntegrationTests() {
 		_modemOptions = new ModemModuleOptions() {
 			SerialPort = "COM7",
-			DefaultTimeoutSeconds = 5,
+			TimeoutSeconds = 5,
 			DefaultBaudRate = 9600,
 			TargetBaudRate = 4000000,
 			ServerHost = "93.176.248.32",
@@ -80,6 +80,6 @@ public class ModemModuleIntegrationTests {
 		await _modemModule!.InitializeAsync();
 		_serverModule!.Start();
 
-		Assert.DoesNotThrow(_modemModule.StartAsync);
+		Assert.DoesNotThrowAsync(() => _modemModule.StartAsync());
 	}
 }

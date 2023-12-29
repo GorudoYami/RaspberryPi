@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NLog.Extensions.Logging;
+using RaspberryPi.Camera;
 using RaspberryPi.Client;
 using RaspberryPi.Client.Models;
 using RaspberryPi.Common.Modules;
@@ -10,6 +11,8 @@ using RaspberryPi.Driving;
 using RaspberryPi.Driving.Models;
 using RaspberryPi.Modem;
 using RaspberryPi.Modem.Models;
+using RaspberryPi.Sensors;
+using RaspberryPi.Sensors.Models;
 
 namespace RaspberryPi;
 
@@ -18,7 +21,7 @@ public static class Program {
 		using ServiceProvider serviceProvide = CreateServiceProvider();
 		IRaspberryPiModule raspberryPi = serviceProvide.GetRequiredService<IRaspberryPiModule>();
 
-		raspberryPi.Run();
+		raspberryPi.RunAsync().GetAwaiter().GetResult();
 	}
 
 	private static ServiceProvider CreateServiceProvider() {
@@ -43,9 +46,11 @@ public static class Program {
 	private static IServiceCollection AddModules(this IServiceCollection services) {
 		return services
 			.AddModule<IRaspberryPiModule, RaspberryPiModule>()
-			.AddModule<IClientModule, ClientModule>()
+			.AddModule<ICameraModule, CameraModule>()
+			.AddModule<ISensorsModule, SensorsModule>()
 			.AddModule<IModemModule, ModemModule>()
-			.AddModule<IDrivingModule, DrivingModule>();
+			.AddModule<IDrivingModule, DrivingModule>()
+			.AddModule<IClientModule, ClientModule>();
 	}
 
 	public static IServiceCollection AddOptions(this IServiceCollection services, IConfiguration configuration) {
@@ -65,6 +70,12 @@ public static class Program {
 			.AddOptions<DrivingModuleOptions>()
 			.Bind(configuration.GetRequiredSection(nameof(DrivingModuleOptions)))
 			.Validate(DrivingModuleOptions.Validate)
+			.ValidateOnStart();
+
+		services
+			.AddOptions<SensorsModuleOptions>()
+			.Bind(configuration.GetRequiredSection(nameof(SensorsModuleOptions)))
+			.Validate(SensorsModuleOptions.Validate)
 			.ValidateOnStart();
 
 		return services;

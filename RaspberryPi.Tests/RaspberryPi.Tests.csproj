@@ -25,6 +25,7 @@
   <ItemGroup>
     <ProjectReference Include="..\RaspberryPi.Common\RaspberryPi.Common.csproj" />
     <ProjectReference Include="..\RaspberryPi\RaspberryPi.csproj" />
+    <ProjectReference Include="..\RasperryPi.Common.Tests\RasperryPi.Common.Tests.csproj" />
   </ItemGroup>
 
 </Project>
