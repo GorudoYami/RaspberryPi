@@ -28,6 +28,7 @@
     <ProjectReference Include="..\Modules\RaspberryPi.Modem\RaspberryPi.Modem.csproj" />
     <ProjectReference Include="..\Modules\RaspberryPi.Sensors\RaspberryPi.Sensors.csproj" />
     <ProjectReference Include="..\RaspberryPi.Common\RaspberryPi.Common.csproj" />
+    <ProjectReference Include="..\RaspberryPi.MQTT\RaspberryPi.Mqtt.csproj" />
   </ItemGroup>
 
   <ItemGroup>

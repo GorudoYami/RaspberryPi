@@ -1,8 +1,7 @@
-﻿using GorudoYami.Common.Modules;
-using System.Net;
+﻿using RaspberryPi.Common.Modules.Providers;
 
 namespace RaspberryPi.Common.Modules;
 
-public interface IModemModule : INetworkModule {
+public interface IModemModule : IMqttProvider, INetworkingProvider {
 
 }

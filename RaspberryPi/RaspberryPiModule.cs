@@ -8,6 +8,7 @@ using System.Net;
 using GorudoYami.Common.Asynchronous;
 using RaspberryPi.Common.Protocols;
 using RaspberryPi.Common.Events;
+using RaspberryPi.Common.Modules.Providers;
 
 namespace RaspberryPi;
 
@@ -127,7 +128,7 @@ public class RaspberryPiModule : IRaspberryPiModule {
 	}
 
 	private async Task ReconnectNetworkModules(CancellationToken cancellationToken = default) {
-		foreach (INetworkModule module in _modules.OfType<INetworkModule>().Where(x => x.Connected == false)) {
+		foreach (INetworkingProvider module in _modules.OfType<INetworkingProvider>().Where(x => x.Connected == false)) {
 			try {
 				if (module.IsInitialized == false) {
 					await module.InitializeAsync(cancellationToken);

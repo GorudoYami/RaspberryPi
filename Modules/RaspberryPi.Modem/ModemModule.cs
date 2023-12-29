@@ -138,12 +138,39 @@ public class ModemModule : IModemModule, IDisposable {
 		SendCommand("AT+CSTT=\"internet\"", throwOnFail: true);
 		SendCommand("AT+CIICR", throwOnFail: true);
 		SendCommand("AT+CIFSR", throwOnFail: true);
+		// Zamienic na postawienie serwera TCP zamiast polaczenie do TCP - mniej przeskoków.
+		// Po MQTT zpublishowac adres i tyle
 		SendCommand($"AT+CIPSTART=\"TCP\",\"{ServerAddress}\",\"{_options.ServerPort}\"", throwOnFail: true);
 
 		_serverReaderWriter = await _protocol.InitializeCommunicationAsync(_serialPort.BaseStream, cancellationToken) as CryptoStreamReaderWriter
 			?? throw new InvalidOperationException("Protocol returned stream of wrong type");
 	}
 
+	public async Task<byte[]> ReadAsync(CancellationToken cancellationToken = default) {
+		AssertConnected();
+		return await _serverReaderWriter!.ReadMessageAsync(cancellationToken);
+	}
+
+	public async Task<string> ReadLineAsync(CancellationToken cancellationToken = default) {
+		AssertConnected();
+		return await _serverReaderWriter!.ReadLineAsync(cancellationToken);
+	}
+
+	public async Task SendAsync(byte[] data, CancellationToken cancellationToken = default) {
+		AssertConnected();
+		await _serverReaderWriter!.WriteMessageAsync(data, cancellationToken);
+	}
+
+	public async Task SendAsync(string data, CancellationToken cancellationToken = default) {
+		AssertConnected();
+		await _serverReaderWriter!.WriteLineAsync(data, cancellationToken);
+	}
+
+	private void AssertConnected() {
+		if (Connected == false) {
+			throw new InvalidOperationException("Not connected to a server");
+		}
+	}
 	public async Task DisconnectAsync(CancellationToken cancellationToken = default) {
 		_serialPort.DtrEnable = false;
 		await Task.Delay(1000, cancellationToken);

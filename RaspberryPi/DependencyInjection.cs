@@ -12,10 +12,23 @@ using RaspberryPi.Sensors.Models;
 using RaspberryPi.Sensors;
 using GorudoYami.Common.Extensions;
 using RaspberryPi.Common.Protocols;
+using RaspberryPi.Common.Providers;
+using RaspberryPi.Resolvers;
+using RaspberryPi.Providers;
+using RaspberryPi.Mqtt;
+using RaspberryPi.Models;
+using RaspberryPi.Camera.Models;
+using RaspberryPi.Mqtt.Models;
 
 namespace RaspberryPi;
 
 public static class DependencyInjection {
+	public static IServiceCollection AddResolvers(this IServiceCollection services) {
+		return services
+			.AddSingleton<INetworkingResolver, NetworkingResolver>()
+			.AddSingleton<IMqttResolver, MqttResolver>();
+	}
+
 	public static IServiceCollection AddProtocols(this IServiceCollection services) {
 		return services
 			.AddSingleton<IClientProtocol, EncryptedClientProtocol>()
@@ -29,14 +42,27 @@ public static class DependencyInjection {
 			.AddModule<ISensorsModule, SensorsModule>()
 			.AddModule<IModemModule, ModemModule>()
 			.AddModule<IDrivingModule, DrivingModule>()
-			.AddModule<IClientModule, ClientModule>();
+			.AddModule<IClientModule, ClientModule>()
+			.AddModule<IMqttModule, MqttModule>();
 	}
 
 	public static IServiceCollection AddOptions(this IServiceCollection services, IConfiguration configuration) {
 		services
-			.AddOptions<ClientModuleOptions>()
-			.Bind(configuration.GetRequiredSection(nameof(ClientModuleOptions)))
-			.Validate(ClientModuleOptions.Validate)
+			.AddOptions<RaspberryPiModuleOptions>()
+			.Bind(configuration.GetRequiredSection(nameof(RaspberryPiModuleOptions)))
+			.Validate(RaspberryPiModuleOptions.Validate)
+			.ValidateOnStart();
+
+		services
+			.AddOptions<CameraModuleOptions>()
+			.Bind(configuration.GetRequiredSection(nameof(CameraModuleOptions)))
+			.Validate(CameraModuleOptions.Validate)
+			.ValidateOnStart();
+
+		services
+			.AddOptions<SensorsModuleOptions>()
+			.Bind(configuration.GetRequiredSection(nameof(SensorsModuleOptions)))
+			.Validate(SensorsModuleOptions.Validate)
 			.ValidateOnStart();
 
 		services
@@ -52,9 +78,15 @@ public static class DependencyInjection {
 			.ValidateOnStart();
 
 		services
-			.AddOptions<SensorsModuleOptions>()
-			.Bind(configuration.GetRequiredSection(nameof(SensorsModuleOptions)))
-			.Validate(SensorsModuleOptions.Validate)
+			.AddOptions<ClientModuleOptions>()
+			.Bind(configuration.GetRequiredSection(nameof(ClientModuleOptions)))
+			.Validate(ClientModuleOptions.Validate)
+			.ValidateOnStart();
+
+		services
+			.AddOptions<MqttModuleOptions>()
+			.Bind(configuration.GetRequiredSection(nameof(MqttModuleOptions)))
+			.Validate(MqttModuleOptions.Validate)
 			.ValidateOnStart();
 
 		return services;

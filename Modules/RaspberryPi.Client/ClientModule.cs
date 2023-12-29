@@ -1,6 +1,4 @@
 ﻿using GorudoYami.Common.Cryptography;
-using GorudoYami.Common.Modules;
-using GorudoYami.Common.Streams;
 using Microsoft.Extensions.Options;
 using RaspberryPi.Client.Models;
 using RaspberryPi.Common.Exceptions;
@@ -9,8 +7,6 @@ using RaspberryPi.Common.Protocols;
 using RaspberryPi.Common.Utilities;
 using System.Net;
 using System.Net.Sockets;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace RaspberryPi.Client;
 
@@ -76,14 +72,14 @@ public class ClientModule : IClientModule, IDisposable, IAsyncDisposable {
 		await _serverReaderWriter!.WriteLineAsync(data, cancellationToken);
 	}
 
-	public async Task ReadLineAsync(CancellationToken cancellationToken = default) {
+	public async Task<string> ReadLineAsync(CancellationToken cancellationToken = default) {
 		AssertConnected();
-		await _serverReaderWriter!.ReadLineAsync(cancellationToken);
+		return await _serverReaderWriter!.ReadLineAsync(cancellationToken);
 	}
 
-	public async Task ReadAsync(CancellationToken cancellationToken = default) {
+	public async Task<byte[]> ReadAsync(CancellationToken cancellationToken = default) {
 		AssertConnected();
-		await _serverReaderWriter!.ReadMessageAsync(cancellationToken);
+		return await _serverReaderWriter!.ReadMessageAsync(cancellationToken);
 	}
 
 	private void AssertConnected() {

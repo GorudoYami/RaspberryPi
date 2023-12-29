@@ -2,6 +2,6 @@
 
 namespace RaspberryPi.Common.Modules;
 
-public interface IClientModule : INetworkingProvider {
+public interface IMqttModule : IMqttProvider {
 
 }
