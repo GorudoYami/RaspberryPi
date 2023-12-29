@@ -2,13 +2,12 @@
 using GorudoYami.Common.Streams;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using RaspberryPi.Common.Exceptions;
 using RaspberryPi.Common.Modules;
+using RaspberryPi.Common.Protocols;
 using RaspberryPi.Common.Utilities;
 using RaspberryPi.Server.Models;
 using System.Net;
 using System.Net.Sockets;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace RaspberryPi.Server;
@@ -20,13 +19,15 @@ public class ServerModule : IServerModule, IDisposable, IAsyncDisposable {
 	private readonly Dictionary<IPAddress, TcpClientInfo> _clients;
 	private readonly TcpListener _listener;
 	private readonly ILogger<IServerModule> _logger;
+	private readonly IProtocol _protocol;
 	private CancellationTokenSource? _cancellationTokenSource;
 	private Task? _listenTask;
 
-	public ServerModule(IOptions<ServerModuleOptions> options, ILogger<IServerModule> logger) {
+	public ServerModule(IOptions<ServerModuleOptions> options, ILogger<IServerModule> logger, IServerProtocol protocol) {
 		_logger = logger;
 		_clients = [];
 		_listener = new TcpListener(Networking.GetAddressFromHostname(options.Value.Host), options.Value.Port);
+		_protocol = protocol;
 	}
 
 	public Task InitializeAsync(CancellationToken cancellationToken = default) {
@@ -116,7 +117,10 @@ public class ServerModule : IServerModule, IDisposable, IAsyncDisposable {
 
 			if (client.Connected) {
 				try {
-					await InitializeCommunicationAsync(client, clientAddress, cancellationToken);
+					var clientStream = await _protocol.InitializeCommunicationAsync(client.GetStream(), cancellationToken) as CryptoStreamReaderWriter
+						?? throw new InvalidOperationException("Protocol returned stream of wrong type");
+
+					_clients[clientAddress] = new TcpClientInfo(client, clientStream);
 				}
 				catch (Exception ex) {
 					_logger.LogError(ex, "Communication initialization with client {ClientAddress} failed", clientAddress.ToString());
@@ -124,65 +128,6 @@ public class ServerModule : IServerModule, IDisposable, IAsyncDisposable {
 				}
 			}
 		}
-	}
-
-	private async Task InitializeCommunicationAsync(TcpClient client, IPAddress clientAddress, CancellationToken cancellationToken) {
-		NetworkStream clientStream = client.GetStream();
-		using var clientReader = new ByteStreamReader(clientStream, true);
-		using var rsa = RSA.Create(CryptographyKeySizes.RsaKeySizeBits);
-
-		byte[] data = await clientReader.ReadMessageAsync(cancellationToken: cancellationToken);
-		int expectedLength = CryptographyKeySizes.RsaKeySizeBits / 8 + CryptographyKeySizes.RsaKeyInfoSizeBits / 8;
-		if (data.Length != expectedLength) {
-			throw new InitializeCommunicationException($"Received public key has an invalid size. Expected: {expectedLength}. Actual: {data.Length}.");
-		}
-
-		rsa.ImportRSAPublicKey(data, out int bytesRead);
-		if (bytesRead != data.Length) {
-			throw new InitializeCommunicationException($"Public key has not been read fully. Expected: {data.Length}. Read: {bytesRead}.");
-		}
-
-		Aes? aes = null;
-		CryptoStreamReaderWriter? csrwClient = null;
-		bool result = false;
-		try {
-			aes = GetAes();
-
-			data = rsa.Encrypt(aes.Key, RSAEncryptionPadding.OaepSHA512);
-			await clientStream.WriteAsync(data, cancellationToken);
-			await clientStream.WriteAsync(Encoding.ASCII.GetBytes("\r\n"), cancellationToken);
-
-			data = rsa.Encrypt(aes.IV, RSAEncryptionPadding.OaepSHA512);
-			await clientStream.WriteAsync(data, cancellationToken);
-			await clientStream.WriteAsync(Encoding.ASCII.GetBytes("\r\n"), cancellationToken);
-
-			csrwClient = new CryptoStreamReaderWriter(aes.CreateEncryptor(), aes.CreateDecryptor(), clientStream);
-			string response = await csrwClient.ReadLineAsync(cancellationToken);
-			if (response == "OK") {
-				_clients.Add(clientAddress, new TcpClientInfo(client, csrwClient));
-				result = true;
-			}
-			else {
-				throw new InitializeCommunicationException($"Did not receive correct response. Expected: OK. Received: {response}");
-			}
-		}
-		finally {
-			if (result == false) {
-				if (csrwClient != null) {
-					await csrwClient.DisposeAsync();
-				}
-
-				aes?.Dispose();
-			}
-		}
-	}
-
-	private static Aes GetAes() {
-		var aes = Aes.Create();
-		aes.KeySize = CryptographyKeySizes.AesKeySizeBits;
-		aes.Key = RandomNumberGenerator.GetBytes(CryptographyKeySizes.AesKeySizeBits / 8);
-		aes.IV = RandomNumberGenerator.GetBytes(CryptographyKeySizes.AesIvSizeBits / 8);
-		return aes;
 	}
 
 	public void Dispose() {

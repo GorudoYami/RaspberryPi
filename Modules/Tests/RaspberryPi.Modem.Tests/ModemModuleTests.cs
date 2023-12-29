@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using NUnit.Framework;
 using RaspberryPi.Common.Modules;
+using RaspberryPi.Common.Protocols;
 using RaspberryPi.Modem.Models;
 
 namespace RaspberryPi.Modem.Tests;
@@ -11,8 +12,10 @@ namespace RaspberryPi.Modem.Tests;
 public class ModemModuleTests {
 	private readonly ModemModuleOptions _options;
 	private ModemModule? _modemModule;
-	private Mock<IOptions<ModemModuleOptions>>? _mockedOptions;
-	private Mock<ILogger<IModemModule>>? _mockedLogger;
+
+	private Mock<IOptions<ModemModuleOptions>> _mockedOptions;
+	private Mock<ILogger<IModemModule>> _mockedLogger;
+	private Mock<IClientProtocol> _mockedClientProtocol;
 
 	public ModemModuleTests() {
 		_options = new ModemModuleOptions() {
@@ -30,12 +33,17 @@ public class ModemModuleTests {
 		_mockedOptions = new Mock<IOptions<ModemModuleOptions>>();
 		_mockedOptions.Setup(x => x.Value).Returns(_options);
 		_mockedLogger = new Mock<ILogger<IModemModule>>();
+		_mockedClientProtocol = new Mock<IClientProtocol>();
 
 		_modemModule = null;
 	}
 
 	private ModemModule GetInstance() {
-		return _modemModule ??= new ModemModule(_mockedOptions!.Object, _mockedLogger!.Object);
+		return _modemModule ??= new ModemModule(
+			_mockedOptions.Object,
+			_mockedLogger.Object,
+			_mockedClientProtocol.Object
+		);
 	}
 
 	[Ignore("WIP")]
@@ -46,6 +54,6 @@ public class ModemModuleTests {
 
 	[TearDown]
 	public void TearDown() {
-		//
+		_modemModule?.Dispose();
 	}
 }

@@ -1,50 +1,42 @@
 ﻿using GorudoYami.Common.Cryptography;
 using GorudoYami.Common.Modules;
-using GorudoYami.Common.Streams;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using RaspberryPi.Common.Exceptions;
 using RaspberryPi.Common.Modules;
+using RaspberryPi.Common.Protocols;
 using RaspberryPi.Common.Utilities;
 using RaspberryPi.Modem.Exceptions;
 using RaspberryPi.Modem.Models;
 using System.IO.Ports;
 using System.Net;
-using System.Security.Cryptography;
 
 namespace RaspberryPi.Modem;
 
 public class ModemModule : IModemModule, IDisposable {
 	public bool LazyInitialization => false;
 	public bool IsInitialized { get; private set; }
-	public IPAddress ServerAddress { get; }
+	public IPAddress ServerAddress => Networking.GetAddressFromHostname(_options.ServerHost);
 	public bool Connected => _serverReaderWriter != null;
 
 	private readonly ILogger<IModemModule> _logger;
 	private readonly SerialPort _serialPort;
-	private readonly int _targetBaudRate;
-	private readonly int _defaultBaudRate;
-	private readonly int _serverPort;
+	private readonly ModemModuleOptions _options;
+	private readonly IProtocol _protocol;
 
-	private ByteStreamReader? _serverUnencryptedReader;
 	private CryptoStreamReaderWriter? _serverReaderWriter;
-	private Aes? _serverAes;
 
-	// Need to create SerialPortProvider for unit testing
-	public ModemModule(IOptions<ModemModuleOptions> options, ILogger<IModemModule> logger) {
+	public ModemModule(IOptions<ModemModuleOptions> options, ILogger<IModemModule> logger, IClientProtocol protocol) {
 		_logger = logger;
-		_targetBaudRate = options.Value.TargetBaudRate;
-		_defaultBaudRate = options.Value.DefaultBaudRate;
-		ServerAddress = Networking.GetAddressFromHostname(options.Value.ServerHost);
-		_serverPort = options.Value.ServerPort;
-		_serialPort = new SerialPort(options.Value.SerialPort) {
-			BaudRate = _targetBaudRate,
+		_options = options.Value;
+		_protocol = protocol;
+		_serialPort = new SerialPort(_options.SerialPort) {
+			BaudRate = _options.TargetBaudRate,
 			DataBits = 8,
 			StopBits = StopBits.One,
 			Parity = Parity.None,
 			Handshake = Handshake.RequestToSend,
-			ReadTimeout = options.Value.TimeoutSeconds * 1000,
-			WriteTimeout = options.Value.TimeoutSeconds * 1000,
+			ReadTimeout = _options.TimeoutSeconds * 1000,
+			WriteTimeout = _options.TimeoutSeconds * 1000,
 			NewLine = "\r\n",
 		};
 	}
@@ -113,31 +105,31 @@ public class ModemModule : IModemModule, IDisposable {
 		}
 
 		_serialPort.Close();
-		_serialPort.BaudRate = _defaultBaudRate;
+		_serialPort.BaudRate = _options.DefaultBaudRate;
 		_serialPort.Open();
 		_serialPort.DiscardInBuffer();
 		_serialPort.DiscardOutBuffer();
 
 		if (SendCommand("AT") == false) {
-			throw new InitializeModuleException($"Could not initialize communication with baud rates {_targetBaudRate} and {_defaultBaudRate}");
+			throw new InitializeModuleException($"Could not initialize communication with baud rates {_options.TargetBaudRate} and {_options.DefaultBaudRate}");
 		}
 
-		if (SendCommand($"AT+IPR={_targetBaudRate}") == false) {
-			throw new InitializeModuleException($"Could not set target baud rate {_targetBaudRate}");
+		if (SendCommand($"AT+IPR={_options.TargetBaudRate}") == false) {
+			throw new InitializeModuleException($"Could not set target baud rate {_options.TargetBaudRate}");
 		}
 
 		_serialPort.Close();
-		_serialPort.BaudRate = _targetBaudRate;
+		_serialPort.BaudRate = _options.TargetBaudRate;
 		_serialPort.Open();
 		_serialPort.DiscardInBuffer();
 		_serialPort.DiscardOutBuffer();
 
 		if (SendCommand("AT")) {
-			throw new InitializeModuleException($"Could not communicate at target baud rate {_targetBaudRate}");
+			throw new InitializeModuleException($"Could not communicate at target baud rate {_options.TargetBaudRate}");
 		}
 	}
 
-	public async Task StartAsync(CancellationToken cancellationToken = default) {
+	public async Task ConnectAsync(CancellationToken cancellationToken = default) {
 		SendCommand("AT+CFUN=1", throwOnFail: true);
 		SendCommand("AT+COPS=0", throwOnFail: true);
 		SendCommand("AT+CEREG=1", throwOnFail: true);
@@ -146,47 +138,21 @@ public class ModemModule : IModemModule, IDisposable {
 		SendCommand("AT+CSTT=\"internet\"", throwOnFail: true);
 		SendCommand("AT+CIICR", throwOnFail: true);
 		SendCommand("AT+CIFSR", throwOnFail: true);
-		SendCommand($"AT+CIPSTART=\"TCP\",\"{ServerAddress}\",\"{_serverPort}\"", throwOnFail: true);
+		SendCommand($"AT+CIPSTART=\"TCP\",\"{ServerAddress}\",\"{_options.ServerPort}\"", throwOnFail: true);
 
-		await InitializeCommunicationAsync(cancellationToken);
+		_serverReaderWriter = await _protocol.InitializeCommunicationAsync(_serialPort.BaseStream, cancellationToken) as CryptoStreamReaderWriter
+			?? throw new InvalidOperationException("Protocol returned stream of wrong type");
 	}
 
-	private async Task InitializeCommunicationAsync(CancellationToken cancellationToken) {
-		Stream serverStream = _serialPort.BaseStream;
-		_serverUnencryptedReader = new ByteStreamReader(_serialPort.BaseStream, true);
+	public async Task DisconnectAsync(CancellationToken cancellationToken = default) {
+		_serialPort.DtrEnable = false;
+		await Task.Delay(1000, cancellationToken);
+		_serialPort.DtrEnable = true;
+		await Task.Delay(25, cancellationToken);
 
-		using var rsa = RSA.Create(CryptographyKeySizes.RsaKeySizeBits);
-		await serverStream.WriteAsync(rsa.ExportRSAPublicKey(), cancellationToken);
-
-		bool result = false;
-		try {
-			_serverAes = Aes.Create();
-			_serverAes.KeySize = CryptographyKeySizes.AesKeySizeBits;
-
-			byte[] data = await _serverUnencryptedReader.ReadMessageAsync(cancellationToken);
-			int expectedLength = CryptographyKeySizes.AesKeySizeBits / 8;
-			if (data.Length != expectedLength) {
-				throw new InitializeCommunicationException($"Received AES key has an invalid size. Expected {expectedLength}. Actual: {data.Length}");
-			}
-			_serverAes.Key = rsa.Decrypt(data, RSAEncryptionPadding.OaepSHA512);
-
-			data = await _serverUnencryptedReader.ReadMessageAsync(cancellationToken);
-			expectedLength = CryptographyKeySizes.AesIvSizeBits / 8;
-			if (data.Length != expectedLength) {
-				throw new InitializeCommunicationException($"Received AES IV has an invalid size. Expected {expectedLength}. Actual: {data.Length}");
-			}
-			_serverAes.IV = rsa.Decrypt(data, RSAEncryptionPadding.OaepSHA512);
-
-			_serverReaderWriter = new CryptoStreamReaderWriter(_serverAes.CreateEncryptor(), _serverAes.CreateDecryptor(), serverStream);
-			await _serverReaderWriter.WriteLineAsync("OK", cancellationToken);
-
-			result = true;
-		}
-		finally {
-			if (result == false) {
-				//Disconnect();
-			}
-		}
+		SendCommand("AT+CIPCLOSE", throwOnFail: true);
+		SendCommand("AT+CIPSHUT", throwOnFail: true);
+		SendCommand("AT+CFUN=7", throwOnFail: true);
 	}
 
 	public void Dispose() {

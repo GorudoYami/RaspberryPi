@@ -1,12 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using RaspberryPi.Common.Events;
 using RaspberryPi.Common.Gpio;
 using RaspberryPi.Common.Modules;
 using RaspberryPi.Sensors.Enums;
 using RaspberryPi.Sensors.Models;
 using System.Device.Gpio;
 using System.Diagnostics;
-using System.Linq;
 
 namespace RaspberryPi.Sensors;
 
@@ -52,14 +52,17 @@ public class SensorsModule(IOptions<SensorsModuleOptions> options, ILogger<ISens
 
 	private async Task Run(CancellationToken cancellationToken) {
 		while (cancellationToken.IsCancellationRequested == false) {
-			foreach (Sensor sensor in _sensors.Where(x => x.IsTriggered() == false)) {
-
+			foreach (Sensor sensor in _sensors) {
 				int distance = Measure(sensor);
 
-				if (_reportDistance <= distance) {
+				if (sensor.IsTriggered() == false && _reportDistance >= distance) {
 					_logger.LogDebug("[{SensorName}] Triggered at {Distance}", sensor.Name, distance);
 					sensor.SetTriggered();
 					SensorTriggered?.Invoke(this, new SensorTriggeredEventArgs(sensor.Name, distance));
+				}
+				else if (sensor.IsTriggered() && _reportDistance <= distance) {
+					_logger.LogDebug("[{SensorName}] Resetting sensor at {Distance}", sensor.Name, distance);
+					sensor.Reset();
 				}
 			}
 

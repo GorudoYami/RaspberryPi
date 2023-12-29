@@ -15,4 +15,8 @@
     <ProjectReference Include="..\..\GorudoYami\GorudoYami.Common\GorudoYami.Common.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Models\" />
+  </ItemGroup>
+
 </Project>

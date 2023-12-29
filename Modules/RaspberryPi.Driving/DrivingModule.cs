@@ -100,7 +100,7 @@ public class DrivingModule : IDrivingModule, IDisposable {
 		UpdateDrivePins();
 	}
 
-	public void Back(double power = 0.5) {
+	public void Backward(double power = 0.5) {
 		if (_driveDirection is Direction.Back && _drivePower == power) {
 			return;
 		}

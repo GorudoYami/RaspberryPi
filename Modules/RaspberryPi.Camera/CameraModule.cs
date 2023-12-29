@@ -1,6 +1,5 @@
 ﻿using GorudoYami.Common.Modules;
 using Iot.Device.Media;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RaspberryPi.Camera.Models;
 using RaspberryPi.Common.Modules;

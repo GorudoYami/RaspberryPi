@@ -4,33 +4,69 @@ using Moq;
 using NUnit.Framework;
 using RaspberryPi.Client.Models;
 using RaspberryPi.Common.Modules;
+using RaspberryPi.Common.Protocols;
 using RaspberryPi.Server;
 using RaspberryPi.Server.Models;
+using RasperryPi.Common.Tests;
 
 namespace RaspberryPi.Client.IntegrationTests;
 
 [TestFixture]
 public class ClientModuleTests {
-	private ClientModule _clientModule;
-	private ServerModule _serverModule;
+	private readonly ClientModuleOptions _clientOptions;
+	private readonly ServerModuleOptions _serverOptions;
+	private ClientModule? _clientModule;
+	private ServerModule? _serverModule;
 
-	[SetUp]
-	public void SetUp() {
-		var clientOptions = new Mock<IOptions<ClientModuleOptions>>();
-		clientOptions.Setup(x => x.Value).Returns(new ClientModuleOptions() {
+	private Mock<ILogger<IServerModule>> _mockedServerLogger;
+	private Mock<IOptions<ServerModuleOptions>> _mockedServerOptions;
+	private Mock<IOptions<ClientModuleOptions>> _mockedClientOptions;
+	private Mock<IServerProtocol> _mockedServerProtocol;
+	private Mock<IClientProtocol> _mockedClientProtocol;
+
+	public ClientModuleTests() {
+		_clientOptions = new ClientModuleOptions() {
 			ServerHost = "localhost",
 			ServerPort = 2137,
 			TimeoutSeconds = 10
-		});
-		var serverOptions = new Mock<IOptions<ServerModuleOptions>>();
-		serverOptions.Setup(x => x.Value).Returns(new ServerModuleOptions() {
+		};
+
+		_serverOptions = new ServerModuleOptions() {
 			Host = "10.0.1.254",
 			Port = 2137
-		});
-		var logger = new Mock<ILogger<IServerModule>>();
+		};
+	}
 
-		_clientModule = new ClientModule(clientOptions.Object);
-		_serverModule = new ServerModule(serverOptions.Object, logger.Object);
+	[SetUp]
+	public void SetUp() {
+		_mockedClientOptions = new Mock<IOptions<ClientModuleOptions>>();
+		_mockedClientOptions.Setup(x => x.Value).Returns(_clientOptions);
+		_mockedServerOptions = new Mock<IOptions<ServerModuleOptions>>();
+		_mockedServerOptions.Setup(x => x.Value).Returns(_serverOptions);
+		_mockedServerLogger = MockedLoggerProvider.GetMockedLogger<IServerModule>();
+		_mockedServerProtocol = new Mock<IServerProtocol>();
+		_mockedClientProtocol = new Mock<IClientProtocol>();
+	}
+
+	[TearDown]
+	public void TearDown() {
+		_clientModule?.Dispose();
+		_serverModule?.Dispose();
+	}
+
+	private ServerModule GetServerInstance() {
+		return _serverModule ??= new ServerModule(
+			_mockedServerOptions.Object,
+			_mockedServerLogger.Object,
+			_mockedServerProtocol.Object
+		);
+	}
+
+	private ClientModule GetClientInstance() {
+		return _clientModule ??= new ClientModule(
+			_mockedClientOptions.Object,
+			_mockedClientProtocol.Object
+		);
 	}
 
 	[Ignore("WIP")]
@@ -61,11 +97,5 @@ public class ClientModuleTests {
 		//bool result = await _clientModule!.ConnectAsync();
 
 		Assert.That(true, Is.True);
-	}
-
-	[TearDown]
-	public void TearDown() {
-		_clientModule.Dispose();
-		_serverModule.Dispose();
 	}
 }

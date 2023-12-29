@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using NUnit.Framework;
 using RaspberryPi.Common.Modules;
+using RaspberryPi.Common.Protocols;
 using RaspberryPi.Modem.Models;
 using RaspberryPi.Server;
 using RaspberryPi.Server.Models;
@@ -20,6 +21,8 @@ public class ModemModuleIntegrationTests {
 	private Mock<ILogger<IServerModule>> _mockedServerLogger;
 	private Mock<IOptions<ModemModuleOptions>> _mockedModemOptions;
 	private Mock<IOptions<ServerModuleOptions>> _mockedServerOptions;
+	private Mock<IClientProtocol> _mockedClientProtocol;
+	private Mock<IServerProtocol> _mockedServerProtocol;
 
 	private ServerModule? _serverModule;
 	private ModemModule? _modemModule;
@@ -42,44 +45,54 @@ public class ModemModuleIntegrationTests {
 
 	[SetUp]
 	public void SetUp() {
-		_mockedModemLogger = MockedLoggerProvider.GetMockedLogger<IModemModule>();
-		_mockedServerLogger = MockedLoggerProvider.GetMockedLogger<IServerModule>();
-
 		_mockedModemOptions = new Mock<IOptions<ModemModuleOptions>>();
 		_mockedModemOptions.Setup(x => x.Value).Returns(_modemOptions);
-
 		_mockedServerOptions = new Mock<IOptions<ServerModuleOptions>>();
 		_mockedServerOptions.Setup(x => x.Value).Returns(_serverOptions);
+		_mockedModemLogger = MockedLoggerProvider.GetMockedLogger<IModemModule>();
+		_mockedServerLogger = MockedLoggerProvider.GetMockedLogger<IServerModule>();
+		_mockedClientProtocol = new Mock<IClientProtocol>();
+		_mockedServerProtocol = new Mock<IServerProtocol>();
 	}
 
 	[TearDown]
 	public void TearDown() {
 		_modemModule?.Dispose();
+		_serverModule?.Dispose();
+		_serverModule = null;
 		_modemModule = null;
 	}
 
-	private ServerModule CreateServerInstance() {
-		return _serverModule ??= new ServerModule(_mockedServerOptions.Object, _mockedServerLogger.Object);
+	private ServerModule GetServerInstance() {
+		return _serverModule ??= new ServerModule(
+			_mockedServerOptions.Object,
+			_mockedServerLogger.Object,
+			_mockedServerProtocol.Object
+		);
 	}
 
-	private ModemModule CreateInstance() {
-		return _modemModule ??= new ModemModule(_mockedModemOptions.Object, _mockedModemLogger.Object);
+	private ModemModule GetInstance() {
+		return _modemModule ??= new ModemModule(
+			_mockedModemOptions.Object,
+			_mockedModemLogger.Object,
+			_mockedClientProtocol.Object
+		);
 	}
 
 	[Test]
 	public void Initialize_DoesNotThrow() {
-		CreateInstance();
+		GetInstance();
 
 		Assert.DoesNotThrowAsync(() => _modemModule!.InitializeAsync());
 	}
 
 	[Test]
 	public async Task Start_ServerWorking_DoesNotThrow() {
-		CreateServerInstance();
-		CreateInstance();
+		GetServerInstance();
+		GetInstance();
 		await _modemModule!.InitializeAsync();
 		_serverModule!.Start();
 
-		Assert.DoesNotThrowAsync(() => _modemModule.StartAsync());
+		Assert.DoesNotThrowAsync(() => _modemModule.ConnectAsync());
 	}
 }
