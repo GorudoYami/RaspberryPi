@@ -18,7 +18,7 @@ public class ClientModuleTests {
 	private ClientModule? _clientModule;
 	private ServerModule? _serverModule;
 
-	private Mock<ILogger<IServerModule>> _mockedServerLogger;
+	private TestLogger<IServerModule> _serverLogger;
 	private Mock<IOptions<ServerModuleOptions>> _mockedServerOptions;
 	private Mock<IOptions<ClientModuleOptions>> _mockedClientOptions;
 	private Mock<IServerProtocol> _mockedServerProtocol;
@@ -43,7 +43,7 @@ public class ClientModuleTests {
 		_mockedClientOptions.Setup(x => x.Value).Returns(_clientOptions);
 		_mockedServerOptions = new Mock<IOptions<ServerModuleOptions>>();
 		_mockedServerOptions.Setup(x => x.Value).Returns(_serverOptions);
-		_mockedServerLogger = MockedLoggerProvider.GetMockedLogger<IServerModule>();
+		_serverLogger = new TestLogger<IServerModule>();
 		_mockedServerProtocol = new Mock<IServerProtocol>();
 		_mockedClientProtocol = new Mock<IClientProtocol>();
 	}
@@ -52,12 +52,13 @@ public class ClientModuleTests {
 	public void TearDown() {
 		_clientModule?.Dispose();
 		_serverModule?.Dispose();
+		_serverLogger.Dispose();
 	}
 
 	private ServerModule GetServerInstance() {
 		return _serverModule ??= new ServerModule(
 			_mockedServerOptions.Object,
-			_mockedServerLogger.Object,
+			_serverLogger,
 			_mockedServerProtocol.Object
 		);
 	}

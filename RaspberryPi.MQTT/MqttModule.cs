@@ -6,7 +6,6 @@ using RaspberryPi.Common.Exceptions;
 using RaspberryPi.Common.Models.Mqtt;
 using RaspberryPi.Common.Modules;
 using RaspberryPi.Mqtt.Models;
-using System.Text;
 
 namespace RaspberryPi.Mqtt;
 

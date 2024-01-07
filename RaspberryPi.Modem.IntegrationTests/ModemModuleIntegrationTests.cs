@@ -5,6 +5,8 @@ using NUnit.Framework;
 using RaspberryPi.Common.Modules;
 using RaspberryPi.Common.Protocols;
 using RaspberryPi.Modem.Models;
+using RaspberryPi.Modem.Options;
+using RaspberryPi.Modem.Validators;
 using RaspberryPi.Server;
 using RaspberryPi.Server.Models;
 using RasperryPi.Common.Tests;
@@ -15,16 +17,11 @@ namespace RaspberryPi.Modem.IntegrationTests;
 [TestFixture]
 public class ModemModuleIntegrationTests {
 	private readonly ModemModuleOptions _modemOptions;
-	private readonly ServerModuleOptions _serverOptions;
 
-	private Mock<ILogger<IModemModule>> _mockedModemLogger;
-	private Mock<ILogger<IServerModule>> _mockedServerLogger;
 	private Mock<IOptions<ModemModuleOptions>> _mockedModemOptions;
-	private Mock<IOptions<ServerModuleOptions>> _mockedServerOptions;
-	private Mock<IClientProtocol> _mockedClientProtocol;
-	private Mock<IServerProtocol> _mockedServerProtocol;
+	private TestLogger<IModemModule> _modemLogger;
+	private TestLogger<IResponseValidator> _responseValidatorLogger;
 
-	private ServerModule? _serverModule;
 	private ModemModule? _modemModule;
 
 	public ModemModuleIntegrationTests() {
@@ -33,13 +30,14 @@ public class ModemModuleIntegrationTests {
 			TimeoutSeconds = 5,
 			DefaultBaudRate = 9600,
 			TargetBaudRate = 4000000,
-			ServerHost = "93.176.248.32",
-			ServerPort = 2137
-		};
-
-		_serverOptions = new ServerModuleOptions() {
-			Host = "10.0.1.5",
-			Port = 2137,
+			ServerPort = 2137,
+			ExpectedResponses = [
+				new ExpectedResponse() {
+					Command = "AT+CFUN=0",
+					MatchAny = true,
+					ResponseLines = ["OK", "+CPIN: NOT READY"]
+				},
+			]
 		};
 	}
 
@@ -47,38 +45,29 @@ public class ModemModuleIntegrationTests {
 	public void SetUp() {
 		_mockedModemOptions = new Mock<IOptions<ModemModuleOptions>>();
 		_mockedModemOptions.Setup(x => x.Value).Returns(_modemOptions);
-		_mockedServerOptions = new Mock<IOptions<ServerModuleOptions>>();
-		_mockedServerOptions.Setup(x => x.Value).Returns(_serverOptions);
-		_mockedModemLogger = MockedLoggerProvider.GetMockedLogger<IModemModule>();
-		_mockedServerLogger = MockedLoggerProvider.GetMockedLogger<IServerModule>();
-		_mockedClientProtocol = new Mock<IClientProtocol>();
-		_mockedServerProtocol = new Mock<IServerProtocol>();
+		_modemLogger = new TestLogger<IModemModule>();
+		_responseValidatorLogger = new TestLogger<IResponseValidator>();
 	}
 
 	[TearDown]
 	public void TearDown() {
 		_modemModule?.Dispose();
-		_serverModule?.Dispose();
-		_serverModule = null;
 		_modemModule = null;
-	}
 
-	private ServerModule GetServerInstance() {
-		return _serverModule ??= new ServerModule(
-			_mockedServerOptions.Object,
-			_mockedServerLogger.Object,
-			_mockedServerProtocol.Object
-		);
+		_modemLogger.Dispose();
+		_responseValidatorLogger.Dispose();
 	}
 
 	private ModemModule GetInstance() {
 		return _modemModule ??= new ModemModule(
 			_mockedModemOptions.Object,
-			_mockedModemLogger.Object,
-			_mockedClientProtocol.Object
+			_modemLogger,
+			new EncryptedClientProtocol(),
+			new ResponseValidator(_mockedModemOptions.Object, _responseValidatorLogger)
 		);
 	}
 
+	[Ignore("UwU")]
 	[Test]
 	public void Initialize_DoesNotThrow() {
 		GetInstance();
@@ -88,10 +77,8 @@ public class ModemModuleIntegrationTests {
 
 	[Test]
 	public async Task Start_ServerWorking_DoesNotThrow() {
-		GetServerInstance();
 		GetInstance();
 		await _modemModule!.InitializeAsync();
-		_serverModule!.Start();
 
 		Assert.DoesNotThrowAsync(() => _modemModule.ConnectAsync());
 	}

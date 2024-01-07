@@ -6,7 +6,6 @@ using RaspberryPi.Client;
 using RaspberryPi.Common.Modules;
 using RaspberryPi.Driving.Models;
 using RaspberryPi.Driving;
-using RaspberryPi.Modem.Models;
 using RaspberryPi.Modem;
 using RaspberryPi.Sensors.Models;
 using RaspberryPi.Sensors;
@@ -19,6 +18,7 @@ using RaspberryPi.Mqtt;
 using RaspberryPi.Models;
 using RaspberryPi.Camera.Models;
 using RaspberryPi.Mqtt.Models;
+using RaspberryPi.Modem.Options;
 
 namespace RaspberryPi;
 

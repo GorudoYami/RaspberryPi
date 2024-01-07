@@ -4,7 +4,7 @@ using Moq;
 using NUnit.Framework;
 using RaspberryPi.Common.Modules;
 using RaspberryPi.Common.Protocols;
-using RaspberryPi.Modem.Models;
+using RaspberryPi.Modem.Options;
 
 namespace RaspberryPi.Modem.Tests;
 
@@ -22,7 +22,6 @@ public class ModemModuleTests {
 			DefaultBaudRate = 9600,
 			TargetBaudRate = 4000000,
 			SerialPort = "COM1",
-			ServerHost = "localhost",
 			ServerPort = 2137,
 			TimeoutSeconds = 5
 		};

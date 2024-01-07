@@ -4,7 +4,6 @@ using System.Net;
 namespace RaspberryPi.Common.Modules.Providers;
 
 public interface INetworkingProvider : IModule {
-	public IPAddress ServerAddress { get; }
 	public bool Connected { get; }
 
 	public Task ConnectAsync(CancellationToken cancellationToken = default);

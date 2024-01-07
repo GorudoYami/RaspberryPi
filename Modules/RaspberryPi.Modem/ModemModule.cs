@@ -4,31 +4,32 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RaspberryPi.Common.Modules;
 using RaspberryPi.Common.Protocols;
-using RaspberryPi.Common.Utilities;
 using RaspberryPi.Modem.Exceptions;
-using RaspberryPi.Modem.Models;
+using RaspberryPi.Modem.Options;
+using RaspberryPi.Modem.Validators;
 using System.IO.Ports;
-using System.Net;
 
 namespace RaspberryPi.Modem;
 
 public class ModemModule : IModemModule, IDisposable {
 	public bool LazyInitialization => false;
 	public bool IsInitialized { get; private set; }
-	public IPAddress ServerAddress => Networking.GetAddressFromHostname(_options.ServerHost);
 	public bool Connected => _serverReaderWriter != null;
 
 	private readonly ILogger<IModemModule> _logger;
 	private readonly SerialPort _serialPort;
 	private readonly ModemModuleOptions _options;
 	private readonly IProtocol _protocol;
+	private readonly IResponseValidator _responseValidator;
 
 	private CryptoStreamReaderWriter? _serverReaderWriter;
 
-	public ModemModule(IOptions<ModemModuleOptions> options, ILogger<IModemModule> logger, IClientProtocol protocol) {
+	public ModemModule(IOptions<ModemModuleOptions> options, ILogger<IModemModule> logger, IClientProtocol protocol, IResponseValidator responseValidator) {
 		_logger = logger;
 		_options = options.Value;
 		_protocol = protocol;
+		_responseValidator = responseValidator;
+
 		_serialPort = new SerialPort(_options.SerialPort) {
 			BaudRate = _options.TargetBaudRate,
 			DataBits = 8,
@@ -41,29 +42,47 @@ public class ModemModule : IModemModule, IDisposable {
 		};
 	}
 
-	public bool SendCommand(string command, string expectedResponse = "OK", bool throwOnFail = false) {
-		string? response = null;
+	public bool SendCommand(string command, bool throwOnFail = false, bool clearBuffer = true) {
+		var responseLines = new List<string>();
+
+		if (_serialPort.BytesToRead > 0 && clearBuffer) {
+			_logger.LogWarning("Serial port has {BytesToRead} bytes to read - clearing buffer", _serialPort.BytesToRead);
+
+			do {
+				ReadLine();
+			} while (_serialPort.BytesToRead > 0);
+		}
 
 		try {
 			WriteLine(command);
-			response = ReadLine();
+
+			do {
+				Thread.Sleep(5);
+				responseLines.Add(ReadLine());
+			} while (_serialPort.BytesToRead > 0);
 		}
 		catch (Exception ex) {
+			string response = JoinResponse(responseLines);
+
 			if (throwOnFail) {
-				throw new SendCommandException($"Command {command} failed with response {response ?? "<null>"}", ex);
+				throw new SendCommandException($"Command {command} failed with response {response}", ex);
 			}
 			else {
-				_logger.LogError(ex, "Command {Command} failed with response {Response}", command, response ?? "<null>");
+				_logger.LogError(ex, "Command {Command} failed with response {Response}", command, response);
 			}
 		}
 
-		bool containsExpectedResponse = response?.Contains(expectedResponse) ?? false;
+		bool containsExpectedResponse = _responseValidator.Validate(command, responseLines);
 
 		if (throwOnFail && containsExpectedResponse == false) {
-			throw new SendCommandException($"Command {command} failed with response {response ?? "<null>"}");
+			throw new SendCommandException($"Command {command} failed with response {JoinResponse(responseLines)}");
 		}
 
 		return containsExpectedResponse;
+	}
+
+	public bool WaitUntilExpectedResponse(string command, int timeoutSeconds) {
+
 	}
 
 	private void WriteLine(string message) {
@@ -86,11 +105,21 @@ public class ModemModule : IModemModule, IDisposable {
 		return message;
 	}
 
+	private static string JoinResponse(List<string> responseLines) {
+		string joinedResponse = string.Join(string.Empty, responseLines);
+		if (joinedResponse == string.Empty) {
+			joinedResponse = "<empty>";
+		}
+
+		return joinedResponse;
+	}
+
 	public Task InitializeAsync(CancellationToken cancellationToken = default) {
 		return Task.Run(() => {
 			InitializeBaudRate();
 			SendCommand("AT+IFC=2,2", throwOnFail: true);
-			SendCommand("AT+CFUN=7", throwOnFail: true);
+			SendCommand("AT+CMEE=2", throwOnFail: true);
+			SendCommand("AT+CFUN=0", throwOnFail: true);
 			IsInitialized = true;
 		}, cancellationToken);
 	}
@@ -131,6 +160,7 @@ public class ModemModule : IModemModule, IDisposable {
 
 	public async Task ConnectAsync(CancellationToken cancellationToken = default) {
 		SendCommand("AT+CFUN=1", throwOnFail: true);
+		// Wait for CPIN: Ready !!! Either from CFUN or query
 		SendCommand("AT+COPS=0", throwOnFail: true);
 		SendCommand("AT+CEREG=1", throwOnFail: true);
 		SendCommand("AT+CGACT=1", throwOnFail: true);
@@ -138,9 +168,7 @@ public class ModemModule : IModemModule, IDisposable {
 		SendCommand("AT+CSTT=\"internet\"", throwOnFail: true);
 		SendCommand("AT+CIICR", throwOnFail: true);
 		SendCommand("AT+CIFSR", throwOnFail: true);
-		// Zamienic na postawienie serwera TCP zamiast polaczenie do TCP - mniej przeskoków.
-		// Po MQTT zpublishowac adres i tyle
-		SendCommand($"AT+CIPSTART=\"TCP\",\"{ServerAddress}\",\"{_options.ServerPort}\"", throwOnFail: true);
+		SendCommand($"AT+CIPSERVER=1,{_options.ServerPort}", throwOnFail: true);
 
 		_serverReaderWriter = await _protocol.InitializeCommunicationAsync(_serialPort.BaseStream, cancellationToken) as CryptoStreamReaderWriter
 			?? throw new InvalidOperationException("Protocol returned stream of wrong type");
