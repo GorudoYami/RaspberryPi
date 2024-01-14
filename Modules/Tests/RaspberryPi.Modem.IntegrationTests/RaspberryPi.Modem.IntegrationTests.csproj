@@ -24,7 +24,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Modules\RaspberryPi.Modem\RaspberryPi.Modem.csproj" />
     <ProjectReference Include="..\Modules\RaspberryPi.Server\RaspberryPi.Server.csproj" />
-    <ProjectReference Include="..\RasperryPi.Common.Tests\RasperryPi.Common.Tests.csproj" />
+    <ProjectReference Include="..\RasperryPi.Common.Tests\RaspberryPi.Common.Tests.csproj" />
   </ItemGroup>
 
 </Project>

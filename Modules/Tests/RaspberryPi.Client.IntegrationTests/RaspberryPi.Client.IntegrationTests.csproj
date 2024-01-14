@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\RasperryPi.Common.Tests\RasperryPi.Common.Tests.csproj" />
+    <ProjectReference Include="..\..\..\RasperryPi.Common.Tests\RaspberryPi.Common.Tests.csproj" />
     <ProjectReference Include="..\..\RaspberryPi.Client\RaspberryPi.Client.csproj" />
     <ProjectReference Include="..\..\RaspberryPi.Server\RaspberryPi.Server.csproj" />
   </ItemGroup>

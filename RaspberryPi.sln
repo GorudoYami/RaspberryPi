@@ -41,13 +41,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.Camera.Tests", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.Sensors.Tests", "Modules\Tests\RaspberryPi.Sensors.Tests\RaspberryPi.Sensors.Tests.csproj", "{7853D2CA-A20A-475B-9752-FCB4A47CBF84}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.Modem.IntegrationTests", "RaspberryPi.Modem.IntegrationTests\RaspberryPi.Modem.IntegrationTests.csproj", "{8DE5E31D-F4C6-4767-AD24-82F7CBA6A563}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.Modem.IntegrationTests", "\Modules\Tests\RaspberryPi.Modem.IntegrationTests\RaspberryPi.Modem.IntegrationTests.csproj", "{8DE5E31D-F4C6-4767-AD24-82F7CBA6A563}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RasperryPi.Common.Tests", "RasperryPi.Common.Tests\RasperryPi.Common.Tests.csproj", "{5465B42A-E947-4626-902D-2A52382CBF66}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.Tests.Common", "RaspberryPi.Tests.Common\RaspberryPi.Tests.Common.csproj", "{5465B42A-E947-4626-902D-2A52382CBF66}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaspberryPi.Mqtt", "RaspberryPi.MQTT\RaspberryPi.Mqtt.csproj", "{A410C641-CBA2-46E5-BA3E-B2881DE128C3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.Mqtt", "Modules\RaspberryPi.Mqtt\RaspberryPi.Mqtt.csproj", "{A410C641-CBA2-46E5-BA3E-B2881DE128C3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaspberryPi.ModemMqtt", "RaspberryPi.ModemMqtt\RaspberryPi.ModemMqtt.csproj", "{0A2669A1-AA5C-4A07-908D-79CA9DF31652}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RaspberryPi.ModemMqtt", "Modules\RaspberryPi.ModemMqtt\RaspberryPi.ModemMqtt.csproj", "{0A2669A1-AA5C-4A07-908D-79CA9DF31652}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaspberryPi.ModemServer", "Modules\RaspberryPi.ModemServer\RaspberryPi.ModemServer.csproj", "{65305566-6199-4D77-8458-EDD3F719761F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -397,6 +399,22 @@ Global
 		{0A2669A1-AA5C-4A07-908D-79CA9DF31652}.Release|ARM64.Build.0 = Release|Any CPU
 		{0A2669A1-AA5C-4A07-908D-79CA9DF31652}.Release|x64.ActiveCfg = Release|Any CPU
 		{0A2669A1-AA5C-4A07-908D-79CA9DF31652}.Release|x64.Build.0 = Release|Any CPU
+		{65305566-6199-4D77-8458-EDD3F719761F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{65305566-6199-4D77-8458-EDD3F719761F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{65305566-6199-4D77-8458-EDD3F719761F}.Debug|ARM32.ActiveCfg = Debug|Any CPU
+		{65305566-6199-4D77-8458-EDD3F719761F}.Debug|ARM32.Build.0 = Debug|Any CPU
+		{65305566-6199-4D77-8458-EDD3F719761F}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{65305566-6199-4D77-8458-EDD3F719761F}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{65305566-6199-4D77-8458-EDD3F719761F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{65305566-6199-4D77-8458-EDD3F719761F}.Debug|x64.Build.0 = Debug|Any CPU
+		{65305566-6199-4D77-8458-EDD3F719761F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{65305566-6199-4D77-8458-EDD3F719761F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{65305566-6199-4D77-8458-EDD3F719761F}.Release|ARM32.ActiveCfg = Release|Any CPU
+		{65305566-6199-4D77-8458-EDD3F719761F}.Release|ARM32.Build.0 = Release|Any CPU
+		{65305566-6199-4D77-8458-EDD3F719761F}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{65305566-6199-4D77-8458-EDD3F719761F}.Release|ARM64.Build.0 = Release|Any CPU
+		{65305566-6199-4D77-8458-EDD3F719761F}.Release|x64.ActiveCfg = Release|Any CPU
+		{65305566-6199-4D77-8458-EDD3F719761F}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -420,6 +438,7 @@ Global
 		{5465B42A-E947-4626-902D-2A52382CBF66} = {D06EA8A3-3C4E-4935-B189-2DFCBC497C79}
 		{A410C641-CBA2-46E5-BA3E-B2881DE128C3} = {DFF02CAA-B468-4EDC-BD3D-F8572B46D5EB}
 		{0A2669A1-AA5C-4A07-908D-79CA9DF31652} = {DFF02CAA-B468-4EDC-BD3D-F8572B46D5EB}
+		{65305566-6199-4D77-8458-EDD3F719761F} = {DFF02CAA-B468-4EDC-BD3D-F8572B46D5EB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {05E0FE84-CDEB-4056-BE83-86645B030CAA}
