@@ -5,33 +5,33 @@ using Microsoft.Extensions.Logging;
 using NLog.Extensions.Logging;
 using RaspberryPi.Common.Modules;
 
-namespace RaspberryPi {
-	public static class Program {
-		public static void Main() {
-			using ServiceProvider serviceProvide = CreateServiceProvider();
-			IRaspberryPiModule raspberryPi = serviceProvide.GetRequiredService<IRaspberryPiModule>();
+namespace RaspberryPi;
 
-			raspberryPi.RunAsync().GetAwaiter().GetResult();
-		}
+public static class Program {
+	public static void Main() {
+		using ServiceProvider serviceProvide = CreateServiceProvider();
+		IRaspberryPiModule raspberryPi = serviceProvide.GetRequiredService<IRaspberryPiModule>();
 
-		private static ServiceProvider CreateServiceProvider() {
-			IConfiguration configuration = new ConfigurationBuilder()
-				.SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-				.AddWritableAppSettings(reloadOnChange: true)
-				.Build();
+		raspberryPi.RunAsync().GetAwaiter().GetResult();
+	}
 
-			IServiceCollection services = new ServiceCollection()
-				.AddSingleton(configuration)
-				.AddProtocols()
-				.AddModules()
-				.AddOptions()
-				.AddLogging(builder => {
-					builder.ClearProviders();
-					builder.SetMinimumLevel(LogLevel.Debug);
-					builder.AddNLog();
-				});
+	private static ServiceProvider CreateServiceProvider() {
+		IConfiguration configuration = new ConfigurationBuilder()
+			.SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+			.AddWritableAppSettings(reloadOnChange: true)
+			.Build();
 
-			return services.BuildServiceProvider();
-		}
+		IServiceCollection services = new ServiceCollection()
+			.AddSingleton(configuration)
+			.AddProtocols()
+			.AddModules()
+			.AddOptions()
+			.AddLogging(builder => {
+				builder.ClearProviders();
+				builder.SetMinimumLevel(LogLevel.Debug);
+				builder.AddNLog();
+			});
+
+		return services.BuildServiceProvider();
 	}
 }

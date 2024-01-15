@@ -1,29 +1,29 @@
 ﻿using GorudoYami.Common.Cryptography;
 using System.Net.Sockets;
 
-namespace RaspberryPi.Server.Models {
-	public class TcpClientInfo : IDisposable, IAsyncDisposable {
-		public TcpClient TcpClient { get; }
-		public CryptoStreamReaderWriter ReaderWriter { get; }
-		public NetworkStream Stream => TcpClient.GetStream();
+namespace RaspberryPi.Server.Models;
 
-		public TcpClientInfo(TcpClient client, CryptoStreamReaderWriter readerWriter) {
-			TcpClient = client;
-			ReaderWriter = readerWriter;
-		}
+public class TcpClientInfo : IDisposable, IAsyncDisposable {
+	public TcpClient TcpClient { get; }
+	public CryptoStreamReaderWriter ReaderWriter { get; }
+	public NetworkStream Stream => TcpClient.GetStream();
 
-		public void Dispose() {
-			GC.SuppressFinalize(this);
+	public TcpClientInfo(TcpClient client, CryptoStreamReaderWriter readerWriter) {
+		TcpClient = client;
+		ReaderWriter = readerWriter;
+	}
 
-			ReaderWriter.Dispose();
-			TcpClient.Dispose();
-		}
+	public void Dispose() {
+		GC.SuppressFinalize(this);
 
-		public async ValueTask DisposeAsync() {
-			GC.SuppressFinalize(this);
+		ReaderWriter.Dispose();
+		TcpClient.Dispose();
+	}
 
-			await ReaderWriter.DisposeAsync();
-			TcpClient.Dispose();
-		}
+	public async ValueTask DisposeAsync() {
+		GC.SuppressFinalize(this);
+
+		await ReaderWriter.DisposeAsync();
+		TcpClient.Dispose();
 	}
 }
