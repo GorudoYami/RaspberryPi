@@ -51,7 +51,7 @@ namespace RaspberryPi.ModemMqtt {
 		}
 
 		public string GetTopicValue(string topicName) {
-			return Topics.TryGetValue(topicName, out var value) ? value.Value : null;
+			return Topics.TryGetValue(topicName, out MqttTopic value) ? value.Value : null;
 		}
 
 		public Task PublishAsync(string topicName, string value, CancellationToken cancellationToken = default) {

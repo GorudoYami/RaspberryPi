@@ -1,6 +1,6 @@
 ﻿using RaspberryPi.Common.Modules;
 using RaspberryPi.Common.Modules.Providers;
-using RaspberryPi.Common.Providers;
+using RaspberryPi.Common.Resolvers;
 
 namespace RaspberryPi.Resolvers {
 	public class NetworkingResolver : INetworkingResolver {

@@ -107,7 +107,7 @@ namespace RaspberryPi.Mqtt {
 		}
 
 		public string GetTopicValue(string topicName) {
-			return Topics.TryGetValue(topicName, out var value) ? value.Value : null;
+			return Topics.TryGetValue(topicName, out MqttTopic value) ? value.Value : null;
 		}
 
 		private void AssertConnected() {

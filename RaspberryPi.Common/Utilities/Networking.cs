@@ -1,5 +1,4 @@
 ﻿using System.Net;
-using System.Net.Sockets;
 
 namespace RaspberryPi.Common.Utilities {
 	public static class Networking {

@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using Moq;
 using NUnit.Framework;
 using RaspberryPi.Common.Modules;
@@ -7,79 +6,76 @@ using RaspberryPi.Common.Protocols;
 using RaspberryPi.Modem.Models;
 using RaspberryPi.Modem.Options;
 using RaspberryPi.Modem.Validators;
-using RaspberryPi.Server;
-using RaspberryPi.Server.Models;
-using RasperryPi.Common.Tests;
-using System.Diagnostics;
+using RaspberryPi.Tests.Common;
 
-namespace RaspberryPi.Modem.IntegrationTests {
-	[TestFixture]
-	public class ModemModuleIntegrationTests {
-		private readonly ModemModuleOptions _modemOptions;
+namespace RaspberryPi.Modem.IntegrationTests;
 
-		private Mock<IOptions<ModemModuleOptions>> _mockedModemOptions;
-		private TestLogger<IModemModule> _modemLogger;
-		private TestLogger<IResponseValidator> _responseValidatorLogger;
+[TestFixture]
+public class ModemModuleIntegrationTests {
+	private readonly ModemModuleOptions _modemOptions;
 
-		private ModemModule? _modemModule;
+	private Mock<IOptions<ModemModuleOptions>> _mockedModemOptions;
+	private TestLogger<IModemModule> _modemLogger;
+	private TestLogger<IResponseValidator> _responseValidatorLogger;
 
-		public ModemModuleIntegrationTests() {
-			_modemOptions = new ModemModuleOptions() {
-				SerialPort = "COM7",
-				TimeoutSeconds = 5,
-				DefaultBaudRate = 9600,
-				TargetBaudRate = 4000000,
-				ServerPort = 2137,
-				ExpectedResponses = [
-					new ExpectedResponse() {
-						Command = "AT+CFUN=0",
-						MatchAny = true,
-						ResponseLines = ["OK", "+CPIN: NOT READY"]
-					},
-				]
-			};
-		}
+	private ModemModule? _modemModule;
 
-		[SetUp]
-		public void SetUp() {
-			_mockedModemOptions = new Mock<IOptions<ModemModuleOptions>>();
-			_mockedModemOptions.Setup(x => x.Value).Returns(_modemOptions);
-			_modemLogger = new TestLogger<IModemModule>();
-			_responseValidatorLogger = new TestLogger<IResponseValidator>();
-		}
+	public ModemModuleIntegrationTests() {
+		_modemOptions = new ModemModuleOptions() {
+			SerialPort = "COM7",
+			TimeoutSeconds = 5,
+			DefaultBaudRate = 9600,
+			TargetBaudRate = 4000000,
+			ServerPort = 2137,
+			ExpectedResponses = [
+				new ExpectedResponse() {
+					Command = "AT+CFUN=0",
+					MatchAny = true,
+					ResponseLines = ["OK", "+CPIN: NOT READY"]
+				},
+			]
+		};
+	}
 
-		[TearDown]
-		public void TearDown() {
-			_modemModule?.Dispose();
-			_modemModule = null;
+	[SetUp]
+	public void SetUp() {
+		_mockedModemOptions = new Mock<IOptions<ModemModuleOptions>>();
+		_mockedModemOptions.Setup(x => x.Value).Returns(_modemOptions);
+		_modemLogger = new TestLogger<IModemModule>();
+		_responseValidatorLogger = new TestLogger<IResponseValidator>();
+	}
 
-			_modemLogger.Dispose();
-			_responseValidatorLogger.Dispose();
-		}
+	[TearDown]
+	public void TearDown() {
+		_modemModule?.Dispose();
+		_modemModule = null;
 
-		private ModemModule GetInstance() {
-			return _modemModule ??= new ModemModule(
-				_mockedModemOptions.Object,
-				_modemLogger,
-				new EncryptedClientProtocol(),
-				new ResponseValidator(_mockedModemOptions.Object, _responseValidatorLogger)
-			);
-		}
+		_modemLogger.Dispose();
+		_responseValidatorLogger.Dispose();
+	}
 
-		[Ignore("UwU")]
-		[Test]
-		public void Initialize_DoesNotThrow() {
-			GetInstance();
+	private ModemModule GetInstance() {
+		return _modemModule ??= new ModemModule(
+			_mockedModemOptions.Object,
+			_modemLogger,
+			new EncryptedClientProtocol(),
+			new ResponseValidator(_mockedModemOptions.Object, _responseValidatorLogger)
+		);
+	}
 
-			Assert.DoesNotThrowAsync(() => _modemModule!.InitializeAsync());
-		}
+	[Ignore("UwU")]
+	[Test]
+	public void Initialize_DoesNotThrow() {
+		GetInstance();
 
-		[Test]
-		public async Task Start_ServerWorking_DoesNotThrow() {
-			GetInstance();
-			await _modemModule!.InitializeAsync();
+		Assert.DoesNotThrowAsync(() => _modemModule!.InitializeAsync());
+	}
 
-			Assert.DoesNotThrowAsync(() => _modemModule.ConnectAsync());
-		}
+	[Test]
+	public async Task Start_ServerWorking_DoesNotThrow() {
+		GetInstance();
+		await _modemModule!.InitializeAsync();
+
+		Assert.DoesNotThrowAsync(() => _modemModule.ConnectAsync());
 	}
 }

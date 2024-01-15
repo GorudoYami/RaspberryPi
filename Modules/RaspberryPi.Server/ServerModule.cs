@@ -1,5 +1,4 @@
 ﻿using GorudoYami.Common.Cryptography;
-using GorudoYami.Common.Streams;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RaspberryPi.Common.Modules;
@@ -125,7 +124,7 @@ namespace RaspberryPi.Server {
 
 				if (client.Connected) {
 					try {
-						var clientStream = await _protocol.InitializeCommunicationAsync(client.GetStream(), cancellationToken) as CryptoStreamReaderWriter
+						CryptoStreamReaderWriter clientStream = await _protocol.InitializeCommunicationAsync(client.GetStream(), cancellationToken) as CryptoStreamReaderWriter
 							?? throw new InvalidOperationException("Protocol returned stream of wrong type");
 
 						_clients[clientAddress] = new TcpClientInfo(client, clientStream);

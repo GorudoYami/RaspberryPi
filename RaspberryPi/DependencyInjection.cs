@@ -1,24 +1,23 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using GorudoYami.Common.Extensions;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RaspberryPi.Camera;
-using RaspberryPi.Client;
-using RaspberryPi.Common.Modules;
-using RaspberryPi.Driving;
-using RaspberryPi.Modem;
-using RaspberryPi.Sensors;
-using GorudoYami.Common.Extensions;
-using RaspberryPi.Common.Protocols;
-using RaspberryPi.Common.Providers;
-using RaspberryPi.Resolvers;
-using RaspberryPi.Providers;
-using RaspberryPi.Mqtt;
-using RaspberryPi.Modem.Options;
-using RaspberryPi.Options;
-using RaspberryPi.Driving.Options;
-using RaspberryPi.Sensors.Options;
 using RaspberryPi.Camera.Options;
+using RaspberryPi.Client;
 using RaspberryPi.Client.Options;
+using RaspberryPi.Common.Modules;
+using RaspberryPi.Common.Protocols;
+using RaspberryPi.Common.Resolvers;
+using RaspberryPi.Driving;
+using RaspberryPi.Driving.Options;
+using RaspberryPi.Modem;
+using RaspberryPi.Modem.Options;
+using RaspberryPi.Mqtt;
 using RaspberryPi.Mqtt.Options;
+using RaspberryPi.Options;
+using RaspberryPi.Resolvers;
+using RaspberryPi.Sensors;
+using RaspberryPi.Sensors.Options;
 
 namespace RaspberryPi {
 	public static class DependencyInjection {

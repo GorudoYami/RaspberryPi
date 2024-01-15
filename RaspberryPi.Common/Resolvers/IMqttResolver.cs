@@ -1,6 +1,6 @@
 ﻿using RaspberryPi.Common.Modules.Providers;
 
-namespace RaspberryPi.Common.Providers {
+namespace RaspberryPi.Common.Resolvers {
 	public interface IMqttResolver {
 		IMqttProvider GetMqtt();
 	}

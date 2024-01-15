@@ -67,6 +67,7 @@ namespace RaspberryPi.Common.Protocols {
 			}
 			finally {
 				rsa?.Dispose();
+				serverReader?.Dispose();
 			}
 		}
 

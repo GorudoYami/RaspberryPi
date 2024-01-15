@@ -4,46 +4,44 @@ using NUnit.Framework;
 using RaspberryPi.Client.Options;
 using RaspberryPi.Common.Protocols;
 
-namespace RaspberryPi.Client.Tests {
-	[TestFixture]
-	public class ClientModuleTests {
-		private ClientModule? _clientModule;
+namespace RaspberryPi.Client.Tests;
 
-		private Mock<IOptions<ClientModuleOptions>> _mockedOptions;
-		private Mock<IClientProtocol> _mockedClientProtocol;
+[TestFixture]
+public class ClientModuleTests {
+	private ClientModule? _clientModule;
 
-		[SetUp]
-		public void SetUp() {
-			_mockedOptions = new Mock<IOptions<ClientModuleOptions>>();
-			_mockedClientProtocol = new Mock<IClientProtocol>();
-		}
+	private Mock<IOptions<ClientModuleOptions>> _mockedOptions;
+	private Mock<IClientProtocol> _mockedClientProtocol;
 
-		[TearDown]
-		public void TearDown() {
-			_clientModule?.Dispose();
-			_clientModule = null;
-		}
+	[SetUp]
+	public void SetUp() {
+		_mockedOptions = new Mock<IOptions<ClientModuleOptions>>();
+		_mockedClientProtocol = new Mock<IClientProtocol>();
+	}
 
-		private ClientModule GetInstance() {
-			return _clientModule ??= new ClientModule(
-				_mockedOptions.Object,
-				_mockedClientProtocol.Object
-			);
-		}
+	[TearDown]
+	public void TearDown() {
+		_clientModule?.Dispose();
+		_clientModule = null;
+	}
 
-		[Ignore("WIP")]
-		[Test]
-		public void Constructor() {
-			_mockedOptions!.Setup(x => x.Value)
-				.Returns(new ClientModuleOptions() {
-					ServerHost = "localhost",
-					ServerPort = 2137,
-					TimeoutSeconds = 5000
-				});
+	private ClientModule GetInstance() {
+		return _clientModule ??= new ClientModule(
+			_mockedOptions.Object,
+			_mockedClientProtocol.Object
+		);
+	}
 
-			Assert.DoesNotThrow(() => GetInstance());
-		}
+	[Ignore("WIP")]
+	[Test]
+	public void Constructor() {
+		_mockedOptions!.Setup(x => x.Value)
+			.Returns(new ClientModuleOptions() {
+				ServerHost = "localhost",
+				ServerPort = 2137,
+				TimeoutSeconds = 5000
+			});
 
-
+		Assert.DoesNotThrow(() => GetInstance());
 	}
 }

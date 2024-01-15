@@ -5,7 +5,7 @@ using Microsoft.Extensions.Options;
 using RaspberryPi.Camera.Options;
 using RaspberryPi.Common.Modules;
 using RaspberryPi.Common.Modules.Providers;
-using RaspberryPi.Common.Providers;
+using RaspberryPi.Common.Resolvers;
 using System;
 using System.Threading;
 using System.Threading.Tasks;

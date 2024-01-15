@@ -1,8 +1,8 @@
 ﻿using RaspberryPi.Common.Modules;
 using RaspberryPi.Common.Modules.Providers;
-using RaspberryPi.Common.Providers;
+using RaspberryPi.Common.Resolvers;
 
-namespace RaspberryPi.Providers {
+namespace RaspberryPi.Resolvers {
 	public class MqttResolver : IMqttResolver {
 		private readonly IModemMqttModule _modemMqttModule;
 		private readonly IMqttModule _mqttModule;

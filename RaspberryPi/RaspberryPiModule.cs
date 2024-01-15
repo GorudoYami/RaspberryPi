@@ -1,19 +1,19 @@
-﻿using System.Net.NetworkInformation;
-using Microsoft.Extensions.Logging;
+﻿using GorudoYami.Common.Asynchronous;
 using GorudoYami.Common.Modules;
-using RaspberryPi.Common.Modules;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System.Net;
-using GorudoYami.Common.Asynchronous;
-using RaspberryPi.Common.Protocols;
 using RaspberryPi.Common.Events;
+using RaspberryPi.Common.Modules;
 using RaspberryPi.Common.Modules.Providers;
+using RaspberryPi.Common.Protocols;
+using RaspberryPi.Options;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.NetworkInformation;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Linq;
-using System;
-using RaspberryPi.Options;
 
 namespace RaspberryPi {
 	public class RaspberryPiModule : IRaspberryPiModule {

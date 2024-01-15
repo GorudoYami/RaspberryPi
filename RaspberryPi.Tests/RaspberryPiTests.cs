@@ -1,12 +1,11 @@
 ﻿using GorudoYami.Common.Asynchronous;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using NUnit.Framework;
 using RaspberryPi.Common.Modules;
 using RaspberryPi.Common.Protocols;
 using RaspberryPi.Options;
-using RasperryPi.Common.Tests;
+using RaspberryPi.Tests.Common;
 
 namespace RaspberryPi.Tests;
 

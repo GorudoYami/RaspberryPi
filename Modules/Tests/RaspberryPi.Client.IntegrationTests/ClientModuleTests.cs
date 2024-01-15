@@ -6,7 +6,7 @@ using RaspberryPi.Common.Modules;
 using RaspberryPi.Common.Protocols;
 using RaspberryPi.Server;
 using RaspberryPi.Server.Models;
-using RasperryPi.Common.Tests;
+using RaspberryPi.Tests.Common;
 
 namespace RaspberryPi.Client.IntegrationTests;
 

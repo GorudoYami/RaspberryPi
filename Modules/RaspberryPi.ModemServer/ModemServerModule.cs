@@ -1,6 +1,4 @@
-﻿namespace RaspberryPi.ModemServer
-{
-    public class ModemServerModule
-    {
-    }
+﻿namespace RaspberryPi.ModemServer {
+	public class ModemServerModule {
+	}
 }

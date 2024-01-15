@@ -100,7 +100,8 @@ namespace RaspberryPi.Sensors {
 		}
 
 		private static void WaitUntil(Func<PinValue> queryAction, PinValue targetPinValue) {
-			while (queryAction() != targetPinValue) ;
+			while (queryAction() != targetPinValue) {
+			}
 		}
 
 		public void ResetSensor(string sensorName) {
