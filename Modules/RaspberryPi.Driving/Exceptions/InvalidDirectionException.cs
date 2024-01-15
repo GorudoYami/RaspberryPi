@@ -1,5 +1,7 @@
-﻿namespace RaspberryPi.Driving.Exceptions {
-	public class InvalidDirectionException(string? message)
-		: Exception(message) {
+﻿using System;
+
+namespace RaspberryPi.Driving.Exceptions {
+	public class InvalidDirectionException : Exception {
+		public InvalidDirectionException(string message) : base(message) { }
 	}
 }

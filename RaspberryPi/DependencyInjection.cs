@@ -1,13 +1,10 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RaspberryPi.Camera;
-using RaspberryPi.Client.Models;
 using RaspberryPi.Client;
 using RaspberryPi.Common.Modules;
-using RaspberryPi.Driving.Models;
 using RaspberryPi.Driving;
 using RaspberryPi.Modem;
-using RaspberryPi.Sensors.Models;
 using RaspberryPi.Sensors;
 using GorudoYami.Common.Extensions;
 using RaspberryPi.Common.Protocols;
@@ -15,10 +12,13 @@ using RaspberryPi.Common.Providers;
 using RaspberryPi.Resolvers;
 using RaspberryPi.Providers;
 using RaspberryPi.Mqtt;
-using RaspberryPi.Models;
-using RaspberryPi.Camera.Models;
-using RaspberryPi.Mqtt.Models;
 using RaspberryPi.Modem.Options;
+using RaspberryPi.Options;
+using RaspberryPi.Driving.Options;
+using RaspberryPi.Sensors.Options;
+using RaspberryPi.Camera.Options;
+using RaspberryPi.Client.Options;
+using RaspberryPi.Mqtt.Options;
 
 namespace RaspberryPi {
 	public static class DependencyInjection {

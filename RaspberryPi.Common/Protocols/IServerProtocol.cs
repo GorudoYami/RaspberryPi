@@ -1,4 +1,4 @@
-﻿namespace RaspberryPi.Common.Protocols;
-
-public interface IServerProtocol : IProtocol {
+﻿namespace RaspberryPi.Common.Protocols {
+	public interface IServerProtocol : IProtocol {
+	}
 }

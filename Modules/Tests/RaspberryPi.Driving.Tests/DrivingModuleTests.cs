@@ -8,6 +8,7 @@ using RaspberryPi.Common.Gpio.Pwm;
 using RaspberryPi.Common.Modules;
 using RaspberryPi.Driving.Enums;
 using RaspberryPi.Driving.Models;
+using RaspberryPi.Driving.Options;
 using System.Device.Gpio;
 using System.Diagnostics;
 

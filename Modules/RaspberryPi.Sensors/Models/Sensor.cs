@@ -1,9 +1,10 @@
 ﻿using RaspberryPi.Sensors.Enums;
+using System.Collections.Generic;
 
 namespace RaspberryPi.Sensors.Models {
 	public class Sensor {
-		public required string Name { get; init; }
-		public required Dictionary<SensorPinType, int> Pins { get; init; }
+		public string Name { get; set; }
+		public Dictionary<SensorPinType, int> Pins { get; set; }
 
 		private bool _triggered;
 

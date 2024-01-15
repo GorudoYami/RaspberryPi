@@ -7,8 +7,11 @@ using RaspberryPi.Common.Protocols;
 using RaspberryPi.Modem.Exceptions;
 using RaspberryPi.Modem.Options;
 using RaspberryPi.Modem.Validators;
-using System.Diagnostics;
+using System;
+using System.Collections.Generic;
 using System.IO.Ports;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace RaspberryPi.Modem {
 	public class ModemModule : IModemModule, IDisposable {
@@ -22,7 +25,7 @@ namespace RaspberryPi.Modem {
 		private readonly IProtocol _protocol;
 		private readonly IResponseValidator _responseValidator;
 
-		private CryptoStreamReaderWriter? _serverReaderWriter;
+		private CryptoStreamReaderWriter _serverReaderWriter;
 
 		public ModemModule(IOptions<ModemModuleOptions> options, ILogger<IModemModule> logger, IClientProtocol protocol, IResponseValidator responseValidator) {
 			_logger = logger;
@@ -186,22 +189,22 @@ namespace RaspberryPi.Modem {
 
 		public async Task<byte[]> ReadAsync(CancellationToken cancellationToken = default) {
 			AssertConnected();
-			return await _serverReaderWriter!.ReadMessageAsync(cancellationToken);
+			return await _serverReaderWriter.ReadMessageAsync(cancellationToken);
 		}
 
 		public async Task<string> ReadLineAsync(CancellationToken cancellationToken = default) {
 			AssertConnected();
-			return await _serverReaderWriter!.ReadLineAsync(cancellationToken);
+			return await _serverReaderWriter.ReadLineAsync(cancellationToken);
 		}
 
 		public async Task SendAsync(byte[] data, CancellationToken cancellationToken = default) {
 			AssertConnected();
-			await _serverReaderWriter!.WriteMessageAsync(data, cancellationToken);
+			await _serverReaderWriter.WriteMessageAsync(data, cancellationToken);
 		}
 
 		public async Task SendAsync(string data, CancellationToken cancellationToken = default) {
 			AssertConnected();
-			await _serverReaderWriter!.WriteLineAsync(data, cancellationToken);
+			await _serverReaderWriter.WriteLineAsync(data, cancellationToken);
 		}
 
 		private void AssertConnected() {

@@ -1,12 +1,15 @@
 ﻿using GorudoYami.Common.Cryptography;
 using Microsoft.Extensions.Options;
-using RaspberryPi.Client.Models;
+using RaspberryPi.Client.Options;
 using RaspberryPi.Common.Exceptions;
 using RaspberryPi.Common.Modules;
 using RaspberryPi.Common.Protocols;
 using RaspberryPi.Common.Utilities;
+using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace RaspberryPi.Client {
 	public class ClientModule : IClientModule, IDisposable, IAsyncDisposable {
@@ -17,8 +20,8 @@ namespace RaspberryPi.Client {
 
 		private readonly ClientModuleOptions _options;
 		private readonly IProtocol _protocol;
-		private TcpClient? _server;
-		private CryptoStreamReaderWriter? _serverReaderWriter;
+		private TcpClient _server;
+		private CryptoStreamReaderWriter _serverReaderWriter;
 
 		public ClientModule(IOptions<ClientModuleOptions> options, IClientProtocol protocol) {
 			_options = options.Value;
@@ -61,24 +64,24 @@ namespace RaspberryPi.Client {
 			byte[] data,
 			CancellationToken cancellationToken = default) {
 			AssertConnected();
-			await _serverReaderWriter!.WriteMessageAsync(data, cancellationToken);
+			await _serverReaderWriter.WriteMessageAsync(data, cancellationToken);
 		}
 
 		public async Task SendAsync(
 			string data,
 			CancellationToken cancellationToken = default) {
 			AssertConnected();
-			await _serverReaderWriter!.WriteLineAsync(data, cancellationToken);
+			await _serverReaderWriter.WriteLineAsync(data, cancellationToken);
 		}
 
 		public async Task<string> ReadLineAsync(CancellationToken cancellationToken = default) {
 			AssertConnected();
-			return await _serverReaderWriter!.ReadLineAsync(cancellationToken);
+			return await _serverReaderWriter.ReadLineAsync(cancellationToken);
 		}
 
 		public async Task<byte[]> ReadAsync(CancellationToken cancellationToken = default) {
 			AssertConnected();
-			return await _serverReaderWriter!.ReadMessageAsync(cancellationToken);
+			return await _serverReaderWriter.ReadMessageAsync(cancellationToken);
 		}
 
 		private void AssertConnected() {

@@ -22,9 +22,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Modules\RaspberryPi.Modem\RaspberryPi.Modem.csproj" />
-    <ProjectReference Include="..\Modules\RaspberryPi.Server\RaspberryPi.Server.csproj" />
-    <ProjectReference Include="..\RasperryPi.Common.Tests\RaspberryPi.Common.Tests.csproj" />
+    <ProjectReference Include="..\..\..\RaspberryPi.Tests.Common\RaspberryPi.Tests.Common.csproj" />
+    <ProjectReference Include="..\..\RaspberryPi.Modem\RaspberryPi.Modem.csproj" />
+    <ProjectReference Include="..\..\RaspberryPi.Server\RaspberryPi.Server.csproj" />
   </ItemGroup>
 
 </Project>

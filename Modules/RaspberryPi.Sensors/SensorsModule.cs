@@ -5,24 +5,38 @@ using RaspberryPi.Common.Gpio;
 using RaspberryPi.Common.Modules;
 using RaspberryPi.Sensors.Enums;
 using RaspberryPi.Sensors.Models;
+using RaspberryPi.Sensors.Options;
+using System;
+using System.Collections.Generic;
 using System.Device.Gpio;
 using System.Diagnostics;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace RaspberryPi.Sensors {
-	public class SensorsModule(IOptions<SensorsModuleOptions> options, ILogger<ISensorsModule> logger, IGpioControllerProvider controller)
+	public class SensorsModule
 		: ISensorsModule, IDisposable, IAsyncDisposable {
 		public bool LazyInitialization => false;
 		public bool IsInitialized { get; private set; }
 
-		public event EventHandler<SensorTriggeredEventArgs>? SensorTriggered;
+		public event EventHandler<SensorTriggeredEventArgs> SensorTriggered;
 
-		private readonly ICollection<Sensor> _sensors = options.Value.Sensors;
-		private readonly ILogger<ISensorsModule> _logger = logger;
-		private readonly IGpioControllerProvider _controller = controller;
-		private readonly int _reportDistance = options.Value.ReportDistance;
-		private readonly int _poolingPeriodSeconds = options.Value.PoolingPeriod;
-		private CancellationTokenSource? _cancellationTokenSource;
-		private Task? _mainTask;
+		private readonly ICollection<Sensor> _sensors;
+		private readonly ILogger<ISensorsModule> _logger;
+		private readonly IGpioControllerProvider _controller;
+		private readonly int _reportDistance;
+		private readonly int _poolingPeriodSeconds;
+		private CancellationTokenSource _cancellationTokenSource;
+		private Task _mainTask;
+
+		public SensorsModule(IOptions<SensorsModuleOptions> options, ILogger<ISensorsModule> logger, IGpioControllerProvider controller) {
+			_logger = logger;
+			_controller = controller;
+			_reportDistance = options.Value.ReportDistance;
+			_poolingPeriodSeconds = options.Value.PoolingPeriod;
+			_sensors = options.Value.Sensors;
+		}
 
 		public Task InitializeAsync(CancellationToken cancellationToken = default) {
 			return Task.Run(() => {
@@ -82,7 +96,7 @@ namespace RaspberryPi.Sensors {
 			WaitUntil(() => _controller.Read(echoPinNumber), PinValue.Low);
 			stopwatch.Stop();
 
-			return (int)Math.Round(stopwatch.Elapsed.TotalMicroseconds / 58, 0);
+			return (int)Math.Round(stopwatch.Elapsed.TotalMilliseconds * 1000 / 58, 0);
 		}
 
 		private static void WaitUntil(Func<PinValue> queryAction, PinValue targetPinValue) {

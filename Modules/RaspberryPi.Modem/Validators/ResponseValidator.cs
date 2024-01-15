@@ -2,6 +2,8 @@
 using Microsoft.Extensions.Options;
 using RaspberryPi.Modem.Models;
 using RaspberryPi.Modem.Options;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace RaspberryPi.Modem.Validators {
 	public class ResponseValidator : IResponseValidator {
@@ -19,7 +21,7 @@ namespace RaspberryPi.Modem.Validators {
 				return false;
 			}
 
-			IEnumerable<ExpectedResponse>? expectedResponseGroup = _expectedResponseGroups.FirstOrDefault(x => x.Key == command);
+			IEnumerable<ExpectedResponse> expectedResponseGroup = _expectedResponseGroups.FirstOrDefault(x => x.Key == command);
 			if (expectedResponseGroup == null) {
 				_logger.LogInformation("No expected responses for command {Command} using default 'OK'", command);
 				return responseLines.Any(x => x.Contains("OK"));
@@ -37,7 +39,7 @@ namespace RaspberryPi.Modem.Validators {
 						return true;
 					}
 				}
-				else if (expectedResponse.ResponseLines.Count == responseLines.Count()) {
+				else if (expectedResponse.ResponseLines.Count() == responseLines.Count()) {
 					bool matches = responseLines
 						.Join(expectedResponse.ResponseLines, x => x, y => y, (x, y) => x)
 						.Count() == expectedResponse.ResponseLines.Count;

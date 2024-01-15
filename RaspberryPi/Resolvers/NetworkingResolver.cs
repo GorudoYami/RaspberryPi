@@ -12,7 +12,7 @@ namespace RaspberryPi.Resolvers {
 			_clientModule = clientModule;
 		}
 
-		public INetworkingProvider? GetNetworking() {
+		public INetworkingProvider GetNetworking() {
 			INetworkingProvider defaultNetworking = _clientModule;
 			INetworkingProvider modemNetworking = _modemModule;
 

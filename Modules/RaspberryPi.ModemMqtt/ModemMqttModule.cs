@@ -2,7 +2,11 @@
 using Microsoft.Extensions.Options;
 using RaspberryPi.Common.Models.Mqtt;
 using RaspberryPi.Common.Modules;
-using RaspberryPi.ModemMqtt.Models;
+using RaspberryPi.ModemMqtt.Options;
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace RaspberryPi.ModemMqtt {
 	public class ModemMqttModule : IModemMqttModule {
@@ -20,7 +24,7 @@ namespace RaspberryPi.ModemMqtt {
 			_options = options.Value;
 			_logger = logger;
 			_modem = modem;
-			_topics = [];
+			_topics = new Dictionary<string, MqttTopic>();
 		}
 
 		public Task InitializeAsync(CancellationToken cancellationToken = default) {
@@ -46,7 +50,7 @@ namespace RaspberryPi.ModemMqtt {
 			return Task.Run(() => _modem.SendCommand("AT+SMDISC"), cancellationToken);
 		}
 
-		public string? GetTopicValue(string topicName) {
+		public string GetTopicValue(string topicName) {
 			return Topics.TryGetValue(topicName, out var value) ? value.Value : null;
 		}
 

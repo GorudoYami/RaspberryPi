@@ -1,7 +1,9 @@
-﻿namespace RaspberryPi.Modem.Models {
+﻿using System.Collections.Generic;
+
+namespace RaspberryPi.Modem.Models {
 	public class ExpectedResponse {
-		public required string Command { get; init; }
-		public required IReadOnlyCollection<string> ResponseLines { get; init; }
-		public required bool MatchAny { get; init; }
+		public string Command { get; set; }
+		public IReadOnlyCollection<string> ResponseLines { get; set; }
+		public bool MatchAny { get; set; }
 	}
 }

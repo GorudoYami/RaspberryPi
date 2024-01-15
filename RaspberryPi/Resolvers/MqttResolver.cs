@@ -12,7 +12,7 @@ namespace RaspberryPi.Providers {
 			_mqttModule = mqttModule;
 		}
 
-		public IMqttProvider? GetMqtt() {
+		public IMqttProvider GetMqtt() {
 			if (_mqttModule.Connected) {
 				return _mqttModule;
 			}

@@ -5,7 +5,11 @@ using MQTTnet.Client;
 using RaspberryPi.Common.Exceptions;
 using RaspberryPi.Common.Models.Mqtt;
 using RaspberryPi.Common.Modules;
-using RaspberryPi.Mqtt.Models;
+using RaspberryPi.Mqtt.Options;
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace RaspberryPi.Mqtt {
 	public class MqttModule : IMqttModule, IDisposable, IAsyncDisposable {
@@ -18,10 +22,10 @@ namespace RaspberryPi.Mqtt {
 		private readonly ILogger<IMqttModule> _logger;
 		private readonly MqttFactory _factory;
 		private readonly Dictionary<string, MqttTopic> _topics;
-		private IMqttClient? _client;
+		private IMqttClient _client;
 
 		public MqttModule(IOptions<MqttModuleOptions> options, ILogger<IMqttModule> logger) {
-			_topics = [];
+			_topics = new Dictionary<string, MqttTopic>();
 			_options = options.Value;
 			_logger = logger;
 			_factory = new MqttFactory();
@@ -82,7 +86,7 @@ namespace RaspberryPi.Mqtt {
 			AssertConnected();
 
 			_topics.Add(topicName, new MqttTopic(topicName, null));
-			await _client!.SubscribeAsync(topicName, cancellationToken: cancellationToken);
+			await _client.SubscribeAsync(topicName, cancellationToken: cancellationToken);
 		}
 
 		public async Task UnsubscribeAsync(string topicName, CancellationToken cancellationToken = default) {
@@ -92,17 +96,17 @@ namespace RaspberryPi.Mqtt {
 				throw new InvalidOperationException($"Topic {topicName} is not subscribed");
 			}
 
-			await _client!.UnsubscribeAsync(topicName, cancellationToken);
+			await _client.UnsubscribeAsync(topicName, cancellationToken);
 			_topics.Remove(topicName);
 		}
 
 		public async Task PublishAsync(string topicName, string value, CancellationToken cancellationToken = default) {
 			AssertConnected();
 
-			await _client!.PublishStringAsync(topicName, value, cancellationToken: cancellationToken);
+			await _client.PublishStringAsync(topicName, value, cancellationToken: cancellationToken);
 		}
 
-		public string? GetTopicValue(string topicName) {
+		public string GetTopicValue(string topicName) {
 			return Topics.TryGetValue(topicName, out var value) ? value.Value : null;
 		}
 

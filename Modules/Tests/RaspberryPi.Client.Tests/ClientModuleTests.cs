@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Options;
 using Moq;
 using NUnit.Framework;
-using RaspberryPi.Client.Models;
+using RaspberryPi.Client.Options;
 using RaspberryPi.Common.Protocols;
 
 namespace RaspberryPi.Client.Tests {

@@ -1,9 +1,9 @@
-﻿namespace RaspberryPi.Common.Protocols.Mqtt;
+﻿namespace RaspberryPi.Common.Protocols.Mqtt {
+	public class MqttSensorsTopics {
+		public string Initialized { get; }
 
-public class MqttSensorsTopics {
-	public string Initialized { get; }
-
-	public MqttSensorsTopics() {
-		Initialized = "sensors/initialized";
+		public MqttSensorsTopics() {
+			Initialized = "sensors/initialized";
+		}
 	}
 }

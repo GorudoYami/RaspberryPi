@@ -6,8 +6,13 @@ using RaspberryPi.Common.Modules;
 using RaspberryPi.Driving.Enums;
 using RaspberryPi.Driving.Exceptions;
 using RaspberryPi.Driving.Models;
+using RaspberryPi.Driving.Options;
+using System;
+using System.Collections.Generic;
 using System.Device.Gpio;
-using System.Device.Pwm;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace RaspberryPi.Driving {
 	public class DrivingModule : IDrivingModule, IDisposable {
@@ -31,7 +36,7 @@ namespace RaspberryPi.Driving {
 			_driveDirection = null;
 			_controller = controller;
 			_logger = logger;
-			_pwmChannels = [];
+			_pwmChannels = new Dictionary<Direction, IPwmChannelProvider>();
 		}
 
 		public Task InitializeAsync(CancellationToken cancellationToken = default) {
@@ -49,7 +54,7 @@ namespace RaspberryPi.Driving {
 		}
 
 		private void Deinitialize() {
-			foreach (DrivingPin pin in _pins.Where(x => x is not DrivingPwmPin)) {
+			foreach (DrivingPin pin in _pins.Where(x => (x is DrivingPwmPin) == false)) {
 				_controller.ClosePin(pin.Number);
 			}
 

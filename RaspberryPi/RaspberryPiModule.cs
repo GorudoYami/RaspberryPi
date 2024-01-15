@@ -3,12 +3,17 @@ using Microsoft.Extensions.Logging;
 using GorudoYami.Common.Modules;
 using RaspberryPi.Common.Modules;
 using Microsoft.Extensions.Options;
-using RaspberryPi.Models;
 using System.Net;
 using GorudoYami.Common.Asynchronous;
 using RaspberryPi.Common.Protocols;
 using RaspberryPi.Common.Events;
 using RaspberryPi.Common.Modules.Providers;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Linq;
+using System;
+using RaspberryPi.Options;
 
 namespace RaspberryPi {
 	public class RaspberryPiModule : IRaspberryPiModule {
@@ -71,11 +76,11 @@ namespace RaspberryPi {
 			_logger.LogDebug("Modules initialized: {ModulesInitializedCount}", _modules.Count(x => x.IsInitialized));
 		}
 
-		private void OnSensorTriggered(object? sender, SensorTriggeredEventArgs e) {
+		private void OnSensorTriggered(object sender, SensorTriggeredEventArgs e) {
 			_drivingModule.Stop();
 		}
 
-		private void OnMessageReceived(object? sender, MessageReceivedEventArgs e) {
+		private void OnMessageReceived(object sender, MessageReceivedEventArgs e) {
 			switch (e.Type) {
 				case MessageType.DriveForward:
 					_drivingModule.Forward(e.Value / 255d);

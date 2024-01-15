@@ -1,15 +1,17 @@
 ﻿using GorudoYami.Common.Modules;
 using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 
-namespace RaspberryPi.Common.Modules.Providers;
+namespace RaspberryPi.Common.Modules.Providers {
+	public interface INetworkingProvider : IModule {
+		bool Connected { get; }
 
-public interface INetworkingProvider : IModule {
-	public bool Connected { get; }
-
-	public Task ConnectAsync(CancellationToken cancellationToken = default);
-	public Task DisconnectAsync(CancellationToken cancellationToken = default);
-	Task<byte[]> ReadAsync(CancellationToken cancellationToken = default);
-	Task<string> ReadLineAsync(CancellationToken cancellationToken = default);
-	Task SendAsync(byte[] data, CancellationToken cancellationToken = default);
-	Task SendAsync(string data, CancellationToken cancellationToken = default);
+		Task ConnectAsync(CancellationToken cancellationToken = default);
+		Task DisconnectAsync(CancellationToken cancellationToken = default);
+		Task<byte[]> ReadAsync(CancellationToken cancellationToken = default);
+		Task<string> ReadLineAsync(CancellationToken cancellationToken = default);
+		Task SendAsync(byte[] data, CancellationToken cancellationToken = default);
+		Task SendAsync(string data, CancellationToken cancellationToken = default);
+	}
 }

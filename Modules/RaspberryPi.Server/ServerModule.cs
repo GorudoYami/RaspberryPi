@@ -6,9 +6,14 @@ using RaspberryPi.Common.Modules;
 using RaspberryPi.Common.Protocols;
 using RaspberryPi.Common.Utilities;
 using RaspberryPi.Server.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace RaspberryPi.Server {
 	public class ServerModule : IServerModule, IDisposable, IAsyncDisposable {
@@ -19,12 +24,12 @@ namespace RaspberryPi.Server {
 		private readonly TcpListener _listener;
 		private readonly ILogger<IServerModule> _logger;
 		private readonly IProtocol _protocol;
-		private CancellationTokenSource? _cancellationTokenSource;
-		private Task? _listenTask;
+		private CancellationTokenSource _cancellationTokenSource;
+		private Task _listenTask;
 
 		public ServerModule(IOptions<ServerModuleOptions> options, ILogger<IServerModule> logger, IServerProtocol protocol) {
 			_logger = logger;
-			_clients = [];
+			_clients = new Dictionary<IPAddress, TcpClientInfo>();
 			_listener = new TcpListener(Networking.GetAddressFromHostname(options.Value.Host), options.Value.Port);
 			_protocol = protocol;
 		}
@@ -34,7 +39,10 @@ namespace RaspberryPi.Server {
 		}
 
 		public void Start() {
-			_cancellationTokenSource ??= new CancellationTokenSource();
+			if (_cancellationTokenSource == null) {
+				_cancellationTokenSource = new CancellationTokenSource();
+			}
+
 			_listener.Start();
 			_listenTask = ListenAsync(_cancellationTokenSource.Token);
 		}
@@ -103,14 +111,15 @@ namespace RaspberryPi.Server {
 				await _clients[address].ReaderWriter.WriteMessageAsync(data, cancellationToken);
 			}
 			else {
-				await _clients[address].Stream.WriteAsync(data, cancellationToken);
-				await _clients[address].Stream.WriteAsync(Encoding.UTF8.GetBytes("\r\n"), cancellationToken);
+				await _clients[address].Stream.WriteAsync(data, 0, data.Length, cancellationToken);
+				data = Encoding.UTF8.GetBytes("\r\n");
+				await _clients[address].Stream.WriteAsync(data, 0, data.Length, cancellationToken);
 			}
 		}
 
 		private async Task ListenAsync(CancellationToken cancellationToken) {
 			while (cancellationToken.IsCancellationRequested == false) {
-				TcpClient client = await _listener.AcceptTcpClientAsync(cancellationToken);
+				TcpClient client = await _listener.AcceptTcpClientAsync();
 				IPAddress clientAddress = (client.Client.RemoteEndPoint as IPEndPoint)?.Address
 					?? throw new InvalidOperationException("Client remote endpoint is invalid");
 

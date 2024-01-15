@@ -2,21 +2,24 @@
 using Iot.Device.Media;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using RaspberryPi.Camera.Models;
+using RaspberryPi.Camera.Options;
 using RaspberryPi.Common.Modules;
 using RaspberryPi.Common.Modules.Providers;
 using RaspberryPi.Common.Providers;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace RaspberryPi.Camera {
 	public class CameraModule : ICameraModule, IDisposable {
 		public bool LazyInitialization => false;
 		public bool IsInitialized { get; private set; }
 
-		private INetworkingProvider? Networking => _networkingProvider.GetNetworking();
+		private INetworkingProvider Networking => _networkingProvider.GetNetworking();
 		private readonly CameraModuleOptions _options;
 		private readonly ILogger<ICameraModule> _logger;
 		private readonly INetworkingResolver _networkingProvider;
-		private VideoDevice? _videoDevice;
+		private VideoDevice _videoDevice;
 
 		public CameraModule(IOptions<CameraModuleOptions> options, ILogger<ICameraModule> logger, INetworkingResolver networkingProvider) {
 			_options = options.Value;

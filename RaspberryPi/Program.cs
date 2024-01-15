@@ -4,14 +4,16 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NLog.Extensions.Logging;
 using RaspberryPi.Common.Modules;
+using System;
 
 namespace RaspberryPi {
 	public static class Program {
 		public static void Main() {
-			using ServiceProvider serviceProvide = CreateServiceProvider();
-			IRaspberryPiModule raspberryPi = serviceProvide.GetRequiredService<IRaspberryPiModule>();
+			using (ServiceProvider serviceProvide = CreateServiceProvider()) {
+				IRaspberryPiModule raspberryPi = serviceProvide.GetRequiredService<IRaspberryPiModule>();
 
-			raspberryPi.RunAsync().GetAwaiter().GetResult();
+				raspberryPi.RunAsync().GetAwaiter().GetResult();
+			}
 		}
 
 		private static ServiceProvider CreateServiceProvider() {

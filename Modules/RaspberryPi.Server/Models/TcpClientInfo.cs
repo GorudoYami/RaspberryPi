@@ -1,5 +1,7 @@
 ﻿using GorudoYami.Common.Cryptography;
+using System;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 
 namespace RaspberryPi.Server.Models {
 	public class TcpClientInfo : IDisposable, IAsyncDisposable {

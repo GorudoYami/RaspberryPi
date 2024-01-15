@@ -1,5 +1,9 @@
-﻿namespace RaspberryPi.Common.Protocols;
+﻿using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
-public interface IProtocol {
-	Task<Stream> InitializeCommunicationAsync(Stream stream, CancellationToken cancellationToken = default);
+namespace RaspberryPi.Common.Protocols {
+	public interface IProtocol {
+		Task<Stream> InitializeCommunicationAsync(Stream stream, CancellationToken cancellationToken = default);
+	}
 }
