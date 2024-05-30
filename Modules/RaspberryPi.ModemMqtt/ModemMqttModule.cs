@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace RaspberryPi.ModemMqtt {
 	public class ModemMqttModule : IModemMqttModule {
-		public bool LazyInitialization => false;
+		public bool Enabled => _options.Enabled;
 		public bool IsInitialized { get; private set; }
 		public bool Connected => _modem.SendCommand("AT+SMSTATE?"); // expectedResponse: "+SMSTATE: 1"
 		public IReadOnlyDictionary<string, MqttTopic> Topics => _topics;

@@ -1,4 +1,6 @@
-﻿using System.Net;
+﻿using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 
 namespace RaspberryPi.Common.Utilities {
 	public static class Networking {
@@ -7,8 +9,10 @@ namespace RaspberryPi.Common.Utilities {
 				return ipAddress;
 			}
 
-			IPHostEntry host = Dns.GetHostEntry(hostname);
-			return host.AddressList[0];
+			return Dns.GetHostEntry(hostname)
+				.AddressList
+				.Where(x => x.AddressFamily == AddressFamily.InterNetwork)
+				.First();
 		}
 	}
 }

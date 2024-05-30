@@ -1,4 +1,4 @@
 ﻿namespace RaspberryPi.Common.Modules {
-	public interface IModemServerModule {
+	public interface IModemServerModule : IModule {
 	}
 }

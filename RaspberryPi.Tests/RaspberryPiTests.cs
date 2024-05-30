@@ -17,12 +17,11 @@ public class RaspberryPiTests {
 	private Mock<IOptions<RaspberryPiModuleOptions>> _mockedOptions;
 	private TestLogger<IRaspberryPiModule> _testLogger;
 	private Mock<ICancellationTokenProvider> _mockedCancellationTokenProvider;
-	private Mock<IClientProtocol> _mockedClientProtocol;
-	private Mock<IClientModule> _mockedTcpClientModule;
+	private Mock<IServerProtocol> _mockedServerProtocol;
 	private Mock<IDrivingModule> _mockedDrivingModule;
-	private Mock<IModemModule> _mockedModemModule;
 	private Mock<ISensorsModule> _mockedSensorsModule;
 	private Mock<ICameraModule> _mockedCameraModule;
+	private Mock<IServerModule> _mockedServerModule;
 
 	public RaspberryPiTests() {
 		_options = new RaspberryPiModuleOptions() {
@@ -37,12 +36,11 @@ public class RaspberryPiTests {
 		_testLogger = new TestLogger<IRaspberryPiModule>();
 		_mockedOptions = new Mock<IOptions<RaspberryPiModuleOptions>>();
 		_mockedCancellationTokenProvider = new Mock<ICancellationTokenProvider>();
-		_mockedClientProtocol = new Mock<IClientProtocol>();
-		_mockedTcpClientModule = new Mock<IClientModule>();
+		_mockedServerProtocol = new Mock<IServerProtocol>();
 		_mockedDrivingModule = new Mock<IDrivingModule>();
 		_mockedCameraModule = new Mock<ICameraModule>();
-		_mockedModemModule = new Mock<IModemModule>();
 		_mockedSensorsModule = new Mock<ISensorsModule>();
+		_mockedServerModule = new Mock<IServerModule>();
 
 		_raspberryPiModule = null;
 	}
@@ -57,12 +55,11 @@ public class RaspberryPiTests {
 			_mockedOptions.Object,
 			_testLogger,
 			_mockedCancellationTokenProvider.Object,
-			_mockedClientProtocol.Object,
-			_mockedTcpClientModule.Object,
+			_mockedServerProtocol.Object,
 			_mockedDrivingModule.Object,
-			_mockedModemModule.Object,
 			_mockedCameraModule.Object,
-			_mockedSensorsModule.Object
+			_mockedSensorsModule.Object,
+			_mockedServerModule.Object
 		);
 	}
 

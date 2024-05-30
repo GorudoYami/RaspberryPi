@@ -6,6 +6,19 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Protocols\EncryptedClientProtocol.cs" />
+    <Compile Remove="Protocols\EncryptedServerProtocol.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Protocols\EncryptedClientProtocol.cs" />
+    <None Include="Protocols\EncryptedServerProtocol.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
     <PackageReference Include="System.Device.Gpio" Version="3.1.0" />
   </ItemGroup>
 

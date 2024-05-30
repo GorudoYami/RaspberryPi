@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RaspberryPi.Common.Events;
 using RaspberryPi.Common.Modules;
-using RaspberryPi.Common.Modules.Providers;
 using RaspberryPi.Common.Protocols;
 using RaspberryPi.Options;
 using System;
@@ -17,63 +16,64 @@ using System.Threading.Tasks;
 
 namespace RaspberryPi {
 	public class RaspberryPiModule : IRaspberryPiModule {
-		public bool LazyInitialization => false;
+		public bool Enabled => true;
 		public bool IsInitialized { get; private set; }
 
 		private readonly RaspberryPiModuleOptions _options;
 		private readonly ILogger<IRaspberryPiModule> _logger;
-		private readonly IClientProtocol _protocol;
-		private readonly ICollection<IModule> _modules;
-		private readonly IClientModule _clientModule;
+		private readonly CancellationToken _cancellationToken;
+		private readonly IServerProtocol _serverProtocol;
 		private readonly IDrivingModule _drivingModule;
-		private readonly IModemModule _modemModule;
 		private readonly ICameraModule _cameraModule;
 		private readonly ISensorsModule _sensorsModule;
-		private readonly CancellationToken _cancellationToken;
+		private readonly IServerModule _serverModule;
+		private readonly ICollection<IModule> _modules;
 
 		public RaspberryPiModule(
 			IOptions<RaspberryPiModuleOptions> options,
 			ILogger<IRaspberryPiModule> logger,
 			ICancellationTokenProvider cancellationTokenProvider,
-			IClientProtocol protocol,
-			IClientModule clientModule,
+			IServerProtocol serverProtocol,
 			IDrivingModule drivingModule,
-			IModemModule modemModule,
 			ICameraModule cameraModule,
-			ISensorsModule sensorsModule) {
+			ISensorsModule sensorsModule,
+			IServerModule serverModule) {
 			_options = options.Value;
 			_logger = logger;
 			_cancellationToken = cancellationTokenProvider.GetToken();
-			_protocol = protocol;
-			_modemModule = modemModule;
+			_serverProtocol = serverProtocol;
 			_drivingModule = drivingModule;
 			_cameraModule = cameraModule;
 			_sensorsModule = sensorsModule;
-			_clientModule = clientModule;
+			_serverModule = serverModule;
 
 			_modules = new List<IModule>() {
-				_modemModule,
 				_drivingModule,
 				_cameraModule,
 				_sensorsModule,
-				_clientModule
+				_serverModule
 			};
 		}
 
 		public async Task InitializeAsync(CancellationToken cancellationToken = default) {
-			_logger.LogDebug("Found {ModulesCount} modules", _modules.Count);
-			_logger.LogDebug("Initializing modules...");
+			try {
+				_logger.LogDebug("Found {ModulesCount} modules", _modules.Count);
+				_logger.LogDebug("Initializing modules...");
 
-			foreach (IModule module in _modules.Where(x => x.IsInitialized != false && x.LazyInitialization == false)) {
-				await module.InitializeAsync(cancellationToken);
+				foreach (IModule module in _modules.Where(x => x.IsInitialized == false && x.Enabled)) {
+					await module.InitializeAsync(cancellationToken);
+				}
+
+				if (_options.DefaultSafety) {
+					_sensorsModule.SensorTriggered += OnSensorTriggered;
+				}
+
+				_serverProtocol.MessageReceived += OnMessageReceived;
+				_logger.LogDebug("Modules initialized: {ModulesInitializedCount}", _modules.Count(x => x.IsInitialized));
 			}
-
-			if (_options.DefaultSafety) {
-				_sensorsModule.SensorTriggered += OnSensorTriggered;
+			catch (Exception ex) {
+				_logger.LogCritical(ex, "Caught error during initialization");
 			}
-
-			_protocol.MessageReceived += OnMessageReceived;
-			_logger.LogDebug("Modules initialized: {ModulesInitializedCount}", _modules.Count(x => x.IsInitialized));
 		}
 
 		private void OnSensorTriggered(object sender, SensorTriggeredEventArgs e) {
@@ -121,9 +121,17 @@ namespace RaspberryPi {
 		public async Task RunAsync() {
 			await InitializeAsync();
 
+			try {
+				_serverModule.Start();
+			}
+			catch (Exception ex) {
+				_logger.LogCritical(ex, "Caught error during server startup");
+			}
+
 			while (_cancellationToken.IsCancellationRequested == false) {
 				try {
-					await ReconnectNetworkModules();
+					Thread.Sleep(10000);
+					ReportStatus();
 				}
 				catch (Exception ex) {
 					_logger.LogCritical(ex, "Caught error in main loop.");
@@ -131,33 +139,20 @@ namespace RaspberryPi {
 			}
 		}
 
-		private async Task ReconnectNetworkModules(CancellationToken cancellationToken = default) {
-			foreach (INetworkingProvider module in _modules.OfType<INetworkingProvider>().Where(x => x.Connected == false)) {
-				try {
-					if (module.IsInitialized == false) {
-						await module.InitializeAsync(cancellationToken);
-					}
-
-					//if (await PingAsync(module.ServerAddress, cancellationToken)) {
-					//	await module.ConnectAsync(cancellationToken);
-					//}
-				}
-				catch (Exception ex) {
-					_logger.LogError(ex, "Network module encountered an error and could not reconnect.");
-				}
-			}
+		private void ReportStatus() {
+			_logger.LogInformation("Status report");
 		}
 
-		private async Task<bool> PingAsync(IPAddress hostAddress, CancellationToken cancellationToken = default) {
-			try {
-				var ping = new Ping();
-				PingReply reply = await ping.SendPingAsync(hostAddress, _options.PingTimeoutSeconds * 1000);
-				return reply.Status == IPStatus.Success;
-			}
-			catch (Exception ex) {
-				_logger.LogWarning(ex, "Pinging host {Host} failed", hostAddress.ToString());
-				return false;
-			}
-		}
+		//private async Task<bool> PingAsync(IPAddress hostAddress, CancellationToken cancellationToken = default) {
+		//	try {
+		//		var ping = new Ping();
+		//		PingReply reply = await ping.SendPingAsync(hostAddress, _options.PingTimeoutSeconds * 1000);
+		//		return reply.Status == IPStatus.Success;
+		//	}
+		//	catch (Exception ex) {
+		//		_logger.LogWarning(ex, "Pinging host {Host} failed", hostAddress.ToString());
+		//		return false;
+		//	}
+		//}
 	}
 }

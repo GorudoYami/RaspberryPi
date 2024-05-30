@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.0" />
@@ -20,10 +21,8 @@
     <ProjectReference Include="..\Modules\RaspberryPi.Camera\RaspberryPi.Camera.csproj" />
     <ProjectReference Include="..\Modules\RaspberryPi.Client\RaspberryPi.Client.csproj" />
     <ProjectReference Include="..\Modules\RaspberryPi.Driving\RaspberryPi.Driving.csproj" />
-    <ProjectReference Include="..\Modules\RaspberryPi.ModemServer\RaspberryPi.ModemServer.csproj" />
-    <ProjectReference Include="..\Modules\RaspberryPi.Modem\RaspberryPi.Modem.csproj" />
-    <ProjectReference Include="..\Modules\RaspberryPi.Mqtt\RaspberryPi.Mqtt.csproj" />
     <ProjectReference Include="..\Modules\RaspberryPi.Sensors\RaspberryPi.Sensors.csproj" />
+    <ProjectReference Include="..\Modules\RaspberryPi.Server\RaspberryPi.Server.csproj" />
     <ProjectReference Include="..\RaspberryPi.Common\RaspberryPi.Common.csproj" />
   </ItemGroup>
 

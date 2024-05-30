@@ -47,7 +47,7 @@ public class ServerModuleTests {
 		_mockedOptions!.Setup(x => x.Value)
 			.Returns(new ServerModuleOptions() {
 				Host = "localhost",
-				Port = 2137
+				MainPort = 2137
 			});
 
 		Assert.DoesNotThrow(() => GetInstance());

@@ -1,31 +1,46 @@
-﻿using GorudoYami.Common.Cryptography;
+﻿using GorudoYami.Common.Streams;
 using System;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
 namespace RaspberryPi.Server.Models {
 	public class TcpClientInfo : IDisposable, IAsyncDisposable {
-		public TcpClient TcpClient { get; }
-		public CryptoStreamReaderWriter ReaderWriter { get; }
-		public NetworkStream Stream => TcpClient.GetStream();
+		public TcpClient MainTcpClient { get; }
+		public TcpClient VideoTcpClient { get; private set; }
+		public NetworkStream MainStream => MainTcpClient.GetStream();
+		public NetworkStream VideoStream => VideoTcpClient?.GetStream();
 
-		public TcpClientInfo(TcpClient client, CryptoStreamReaderWriter readerWriter) {
-			TcpClient = client;
-			ReaderWriter = readerWriter;
+		public ByteStreamReaderWriter MainReaderWriter { get; }
+		public ByteStreamReaderWriter VideoReaderWriter { get; private set; }
+
+		public TcpClientInfo(TcpClient client, string delimiter) {
+			MainTcpClient = client;
+			MainReaderWriter = new ByteStreamReaderWriter(MainStream, firstDelimiter: delimiter[0], secondDelimiter: GetSecondCharacter(delimiter));
+		}
+
+		private char? GetSecondCharacter(string delimiter) {
+			if (delimiter.Length > 1) {
+				return delimiter[1];
+			}
+
+			return null;
+		}
+
+		public void SetVideoClient(TcpClient client) {
+			VideoTcpClient = client;
+			VideoReaderWriter = new ByteStreamReaderWriter(VideoStream);
 		}
 
 		public void Dispose() {
 			GC.SuppressFinalize(this);
 
-			ReaderWriter.Dispose();
-			TcpClient.Dispose();
+			MainTcpClient.Dispose();
 		}
 
 		public async ValueTask DisposeAsync() {
 			GC.SuppressFinalize(this);
-
-			await ReaderWriter.DisposeAsync();
-			TcpClient.Dispose();
+			MainTcpClient.Dispose();
+			await Task.CompletedTask;
 		}
 	}
 }

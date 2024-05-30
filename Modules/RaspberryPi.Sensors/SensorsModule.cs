@@ -17,7 +17,7 @@ using System.Threading.Tasks;
 namespace RaspberryPi.Sensors {
 	public class SensorsModule
 		: ISensorsModule, IDisposable, IAsyncDisposable {
-		public bool LazyInitialization => false;
+		public bool Enabled { get; private set; }
 		public bool IsInitialized { get; private set; }
 
 		public event EventHandler<SensorTriggeredEventArgs> SensorTriggered;

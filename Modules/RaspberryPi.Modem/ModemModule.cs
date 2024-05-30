@@ -15,22 +15,21 @@ using System.Threading.Tasks;
 
 namespace RaspberryPi.Modem {
 	public class ModemModule : IModemModule, IDisposable {
-		public bool LazyInitialization => false;
+		public bool Enabled => _options.Enabled;
 		public bool IsInitialized { get; private set; }
 		public bool Connected => _serverReaderWriter != null;
 
 		private readonly ILogger<IModemModule> _logger;
 		private readonly SerialPort _serialPort;
 		private readonly ModemModuleOptions _options;
-		private readonly IProtocol _protocol;
+
 		private readonly IResponseValidator _responseValidator;
 
 		private CryptoStreamReaderWriter _serverReaderWriter;
 
-		public ModemModule(IOptions<ModemModuleOptions> options, ILogger<IModemModule> logger, IClientProtocol protocol, IResponseValidator responseValidator) {
+		public ModemModule(IOptions<ModemModuleOptions> options, ILogger<IModemModule> logger, IResponseValidator responseValidator) {
 			_logger = logger;
 			_options = options.Value;
-			_protocol = protocol;
 			_responseValidator = responseValidator;
 
 			_serialPort = new SerialPort(_options.SerialPort) {
@@ -84,15 +83,15 @@ namespace RaspberryPi.Modem {
 			return containsExpectedResponse;
 		}
 
-		public bool WaitUntilExpectedResponse(string command, int timeoutSeconds) {
+		public async Task<bool> WaitUntilExpectedResponse(string command, int timeoutSeconds, CancellationToken cancellationToken = default) {
 			DateTime start = DateTime.Now;
 
-			while (SendCommand(command) == false) {
+			while (SendCommand(command) == false && cancellationToken.IsCancellationRequested == false) {
 				if ((start - DateTime.Now).TotalSeconds < timeoutSeconds) {
 					return false;
 				}
 
-				Thread.Sleep(250);
+				await Task.Delay(250, cancellationToken);
 			}
 
 			return true;
@@ -173,54 +172,10 @@ namespace RaspberryPi.Modem {
 
 		public async Task ConnectAsync(CancellationToken cancellationToken = default) {
 			SendCommand("AT+CFUN=1", throwOnFail: true);
-			// Wait for CPIN: Ready !!! Either from CFUN or query
+			await WaitUntilExpectedResponse("AT+CFUN?", 10);
 			SendCommand("AT+COPS=0", throwOnFail: true);
 			SendCommand("AT+CEREG=1", throwOnFail: true);
 			SendCommand("AT+CGACT=1", throwOnFail: true);
-			SendCommand("AT+CIPMODE=1", throwOnFail: true);
-			SendCommand("AT+CSTT=\"internet\"", throwOnFail: true);
-			SendCommand("AT+CIICR", throwOnFail: true);
-			SendCommand("AT+CIFSR", throwOnFail: true);
-			SendCommand($"AT+CIPSERVER=1,{_options.ServerPort}", throwOnFail: true);
-
-			_serverReaderWriter = await _protocol.InitializeCommunicationAsync(_serialPort.BaseStream, cancellationToken) as CryptoStreamReaderWriter
-				?? throw new InvalidOperationException("Protocol returned stream of wrong type");
-		}
-
-		public async Task<byte[]> ReadAsync(CancellationToken cancellationToken = default) {
-			AssertConnected();
-			return await _serverReaderWriter.ReadMessageAsync(cancellationToken);
-		}
-
-		public async Task<string> ReadLineAsync(CancellationToken cancellationToken = default) {
-			AssertConnected();
-			return await _serverReaderWriter.ReadLineAsync(cancellationToken);
-		}
-
-		public async Task SendAsync(byte[] data, CancellationToken cancellationToken = default) {
-			AssertConnected();
-			await _serverReaderWriter.WriteMessageAsync(data, cancellationToken);
-		}
-
-		public async Task SendAsync(string data, CancellationToken cancellationToken = default) {
-			AssertConnected();
-			await _serverReaderWriter.WriteLineAsync(data, cancellationToken);
-		}
-
-		private void AssertConnected() {
-			if (Connected == false) {
-				throw new InvalidOperationException("Not connected to a server");
-			}
-		}
-		public async Task DisconnectAsync(CancellationToken cancellationToken = default) {
-			_serialPort.DtrEnable = false;
-			await Task.Delay(1000, cancellationToken);
-			_serialPort.DtrEnable = true;
-			await Task.Delay(25, cancellationToken);
-
-			SendCommand("AT+CIPCLOSE", throwOnFail: true);
-			SendCommand("AT+CIPSHUT", throwOnFail: true);
-			SendCommand("AT+CFUN=7", throwOnFail: true);
 		}
 
 		public void Dispose() {

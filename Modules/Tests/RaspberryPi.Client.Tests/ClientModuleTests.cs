@@ -38,7 +38,7 @@ public class ClientModuleTests {
 		_mockedOptions!.Setup(x => x.Value)
 			.Returns(new ClientModuleOptions() {
 				ServerHost = "localhost",
-				ServerPort = 2137,
+				MainServerPort = 2137,
 				TimeoutSeconds = 5000
 			});
 

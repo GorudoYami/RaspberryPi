@@ -1,5 +1,6 @@
 ﻿using GorudoYami.Common.Cryptography;
 using GorudoYami.Common.Streams;
+using Microsoft.Extensions.Logging;
 using RaspberryPi.Common.Exceptions;
 using RaspberryPi.Common.Utilities;
 using System.IO;
@@ -11,12 +12,15 @@ using System.Threading.Tasks;
 
 namespace RaspberryPi.Common.Protocols {
 	public class EncryptedServerProtocol : IServerProtocol {
+		public string Delimiter => "\r\n";
+
 		private Aes _aes;
 		private CryptoStreamReaderWriter _clientReaderWriter;
 
 		public async Task<Stream> InitializeCommunicationAsync(Stream clientStream, CancellationToken cancellationToken = default) {
 			ByteStreamReader clientReader = null;
 			RSA rsa = null;
+
 			try {
 				clientReader = new ByteStreamReader(clientStream, true);
 				rsa = RSA.Create();
@@ -37,12 +41,12 @@ namespace RaspberryPi.Common.Protocols {
 
 					data = rsa.Encrypt(_aes.Key, RSAEncryptionPadding.OaepSHA512);
 					await clientStream.WriteAsync(data, 0, data.Length, cancellationToken);
-					data = Encoding.ASCII.GetBytes("\r\n");
+					data = Encoding.ASCII.GetBytes(Delimiter);
 					await clientStream.WriteAsync(data, 0, data.Length, cancellationToken);
 
 					data = rsa.Encrypt(_aes.IV, RSAEncryptionPadding.OaepSHA512);
 					await clientStream.WriteAsync(data, 0, data.Length, cancellationToken);
-					data = Encoding.ASCII.GetBytes("\r\n");
+					data = Encoding.ASCII.GetBytes(Delimiter);
 					await clientStream.WriteAsync(data, 0, data.Length, cancellationToken);
 
 					_clientReaderWriter = new CryptoStreamReaderWriter(_aes.CreateEncryptor(), _aes.CreateDecryptor(), clientStream);
@@ -65,20 +69,6 @@ namespace RaspberryPi.Common.Protocols {
 			}
 		}
 
-		private static Aes CreateAes() {
-			var aes = Aes.Create();
-			aes.KeySize = CryptographyKeySizes.AesKeySizeBits;
-			aes.Key = new byte[CryptographyKeySizes.AesKeySizeBits / 8];
-			aes.IV = new byte[CryptographyKeySizes.AesIvSizeBits / 8];
-
-			using (var rng = RandomNumberGenerator.Create()) {
-				rng.GetBytes(aes.Key);
-				rng.GetBytes(aes.IV);
-			}
-
-			return aes;
-		}
-
 		private async Task CleanupAsync(bool result) {
 			if (result == false) {
 				_aes?.Dispose();
@@ -90,6 +80,10 @@ namespace RaspberryPi.Common.Protocols {
 
 			_clientReaderWriter = null;
 			_aes = null;
+		}
+
+		public Aes GetLastUsedAes() {
+			return _aes;
 		}
 	}
 }

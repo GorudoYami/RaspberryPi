@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace RaspberryPi.Mqtt {
 	public class MqttModule : IMqttModule, IDisposable, IAsyncDisposable {
-		public bool LazyInitialization => false;
+		public bool Enabled => _options.Enabled;
 		public bool IsInitialized { get; private set; }
 		public bool Connected => _client?.IsConnected ?? false;
 		public IReadOnlyDictionary<string, MqttTopic> Topics => _topics;
@@ -31,12 +31,12 @@ namespace RaspberryPi.Mqtt {
 			_factory = new MqttFactory();
 		}
 
-		public async Task InitializeAsync(CancellationToken cancellationToken = default) {
-			await Task.Delay(0, cancellationToken);
+		public Task InitializeAsync(CancellationToken cancellationToken = default) {
+			return Task.CompletedTask;
 		}
 
 		public async Task ConnectAsync(CancellationToken cancellationToken = default) {
-			if (_client != null) {
+			if (Connected) {
 				_logger.LogWarning("Client was already connected - disconnecting.");
 				await DisconnectAsync(cancellationToken);
 			}

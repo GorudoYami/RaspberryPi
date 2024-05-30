@@ -2,17 +2,26 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NLog;
 using NLog.Extensions.Logging;
 using RaspberryPi.Common.Modules;
 using System;
+using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace RaspberryPi {
 	public static class Program {
 		public static void Main() {
-			using (ServiceProvider serviceProvide = CreateServiceProvider()) {
-				IRaspberryPiModule raspberryPi = serviceProvide.GetRequiredService<IRaspberryPiModule>();
+			try {
+				InitializeNlog();
 
-				raspberryPi.RunAsync().GetAwaiter().GetResult();
+				using (ServiceProvider serviceProvide = CreateServiceProvider()) {
+					IRaspberryPiModule raspberryPi = serviceProvide.GetRequiredService<IRaspberryPiModule>();
+
+					raspberryPi.RunAsync().GetAwaiter().GetResult();
+				}
+			}
+			finally {
+				DeinitializeNlog();
 			}
 		}
 
@@ -34,6 +43,18 @@ namespace RaspberryPi {
 				});
 
 			return services.BuildServiceProvider();
+		}
+
+		private static void InitializeNlog() {
+			LogManager.ThrowExceptions = true;
+			LogManager.ThrowConfigExceptions = true;
+			LogManager
+				.Setup()
+				.LoadConfigurationFromFile("nlog.config");
+		}
+
+		private static void DeinitializeNlog() {
+			LogManager.Shutdown();
 		}
 	}
 }

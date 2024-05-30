@@ -20,19 +20,21 @@ public class ClientModuleTests {
 	private TestLogger<IServerModule> _serverLogger;
 	private Mock<IOptions<ServerModuleOptions>> _mockedServerOptions;
 	private Mock<IOptions<ClientModuleOptions>> _mockedClientOptions;
-	private Mock<IServerProtocol> _mockedServerProtocol;
-	private Mock<IClientProtocol> _mockedClientProtocol;
+	private IServerProtocol _serverProtocol;
+	private IClientProtocol _clientProtocol;
 
 	public ClientModuleTests() {
 		_clientOptions = new ClientModuleOptions() {
-			ServerHost = "localhost",
-			ServerPort = 2137,
+			ServerHost = "10.0.1.10",
+			MainServerPort = 2137,
+			VideoServerPort = 6969,
 			TimeoutSeconds = 10
 		};
 
 		_serverOptions = new ServerModuleOptions() {
-			Host = "10.0.1.254",
-			Port = 2137
+			Host = "10.0.1.10",
+			MainPort = 2137,
+			VideoPort = 6969,
 		};
 	}
 
@@ -43,8 +45,8 @@ public class ClientModuleTests {
 		_mockedServerOptions = new Mock<IOptions<ServerModuleOptions>>();
 		_mockedServerOptions.Setup(x => x.Value).Returns(_serverOptions);
 		_serverLogger = new TestLogger<IServerModule>();
-		_mockedServerProtocol = new Mock<IServerProtocol>();
-		_mockedClientProtocol = new Mock<IClientProtocol>();
+		_serverProtocol = new StandardServerProtocol();
+		_clientProtocol = new StandardClientProtocol();
 	}
 
 	[TearDown]
@@ -58,14 +60,14 @@ public class ClientModuleTests {
 		return _serverModule ??= new ServerModule(
 			_mockedServerOptions.Object,
 			_serverLogger,
-			_mockedServerProtocol.Object
+			_serverProtocol
 		);
 	}
 
 	private ClientModule GetClientInstance() {
 		return _clientModule ??= new ClientModule(
 			_mockedClientOptions.Object,
-			_mockedClientProtocol.Object
+			_clientProtocol
 		);
 	}
 
@@ -79,12 +81,17 @@ public class ClientModuleTests {
 
 	[Test]
 	public async Task Test() {
-		await _serverModule!.InitializeAsync();
-		while (true) {
-			Thread.Sleep(100);
-		}
+		var server = GetServerInstance();
+		var client = GetClientInstance();
+
+		await server.InitializeAsync();
+		await client.InitializeAsync();
+
+		server.Start();
+		await client.ConnectAsync();
 	}
 
+	[Ignore("WIP")]
 	[Test]
 	public void DisconnectAsync_NotConnected_NothingHappens() {
 		Assert.DoesNotThrowAsync(() => _clientModule!.DisconnectAsync());

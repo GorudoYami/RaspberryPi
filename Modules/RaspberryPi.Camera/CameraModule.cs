@@ -12,19 +12,18 @@ using System.Threading.Tasks;
 
 namespace RaspberryPi.Camera {
 	public class CameraModule : ICameraModule, IDisposable {
-		public bool LazyInitialization => false;
+		public bool Enabled => _options.Enabled;
 		public bool IsInitialized { get; private set; }
 
-		private INetworkingProvider Networking => _networkingProvider.GetNetworking();
 		private readonly CameraModuleOptions _options;
 		private readonly ILogger<ICameraModule> _logger;
-		private readonly INetworkingResolver _networkingProvider;
+		private readonly IServerModule _serverModule;
 		private VideoDevice _videoDevice;
 
-		public CameraModule(IOptions<CameraModuleOptions> options, ILogger<ICameraModule> logger, INetworkingResolver networkingProvider) {
+		public CameraModule(IOptions<CameraModuleOptions> options, ILogger<ICameraModule> logger, IServerModule serverModule) {
 			_options = options.Value;
 			_logger = logger;
-			_networkingProvider = networkingProvider;
+			_serverModule = serverModule;
 		}
 
 		public Task InitializeAsync(CancellationToken cancellationToken = default) {
@@ -39,15 +38,9 @@ namespace RaspberryPi.Camera {
 			}, cancellationToken);
 		}
 
-		private void OnNewImageBufferReady(object sender, NewImageBufferReadyEventArgs e) {
+		private async void OnNewImageBufferReady(object sender, NewImageBufferReadyEventArgs e) {
 			try {
-				if (Networking == null) {
-					_logger.LogError("No connection for video stream. Stopping capturing.");
-					Stop();
-					return;
-				}
-
-				Networking.SendAsync(e.ImageBuffer).GetAwaiter().GetResult();
+				await _serverModule.BroadcastVideoAsync(e.ImageBuffer);
 			}
 			catch (Exception ex) {
 				_logger.LogError(ex, "Error occured during video stream. Stopping capturing.");

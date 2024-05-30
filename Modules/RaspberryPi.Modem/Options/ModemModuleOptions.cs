@@ -1,8 +1,10 @@
-﻿using RaspberryPi.Modem.Models;
+﻿using RaspberryPi.Common.Options;
+using RaspberryPi.Modem.Models;
 using System.Collections.Generic;
 
 namespace RaspberryPi.Modem.Options {
-	public class ModemModuleOptions {
+	public class ModemModuleOptions : IModuleOptions {
+		public bool Enabled { get; set; }
 		public string SerialPort { get; set; }
 		public int DefaultBaudRate { get; set; }
 		public int TargetBaudRate { get; set; }

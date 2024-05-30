@@ -16,12 +16,12 @@ using System.Threading.Tasks;
 
 namespace RaspberryPi.Driving {
 	public class DrivingModule : IDrivingModule, IDisposable {
-		public bool LazyInitialization => false;
+		public bool Enabled => _options.Enabled;
 		public bool IsInitialized { get; private set; }
 
+		private readonly DrivingModuleOptions _options;
 		private readonly IGpioControllerProvider _controller;
 		private readonly ILogger<IDrivingModule> _logger;
-		private readonly ICollection<DrivingPin> _pins;
 		private readonly Dictionary<Direction, IPwmChannelProvider> _pwmChannels;
 		private double _turnPower;
 		private double _drivePower;
@@ -29,7 +29,7 @@ namespace RaspberryPi.Driving {
 		private Direction? _driveDirection;
 
 		public DrivingModule(IOptions<DrivingModuleOptions> options, ILogger<IDrivingModule> logger, IGpioControllerProvider controller) {
-			_pins = options.Value.Pins;
+			_options = options.Value;
 			_turnPower = 0;
 			_drivePower = 0;
 			_turnDirection = null;
@@ -41,7 +41,7 @@ namespace RaspberryPi.Driving {
 
 		public Task InitializeAsync(CancellationToken cancellationToken = default) {
 			return Task.Run(() => {
-				foreach (DrivingPin pin in _pins) {
+				foreach (DrivingPin pin in _options.Pins) {
 					if (pin is DrivingPwmPin pwmPin) {
 						IPwmChannelProvider pwmChannel = _controller.GetPwmChannel(pwmPin.Chip, pwmPin.Number, 400, 0);
 						_pwmChannels.Add(pin.Direction, pwmChannel);
@@ -54,7 +54,7 @@ namespace RaspberryPi.Driving {
 		}
 
 		private void Deinitialize() {
-			foreach (DrivingPin pin in _pins.Where(x => (x is DrivingPwmPin) == false)) {
+			foreach (DrivingPin pin in _options.Pins.Where(x => (x is DrivingPwmPin) == false)) {
 				_controller.ClosePin(pin.Number);
 			}
 
@@ -152,7 +152,7 @@ namespace RaspberryPi.Driving {
 		}
 
 		private void Write(Direction direction, PinValue pinValue) {
-			DrivingPin pin = _pins.Single(p => p.Direction == direction);
+			DrivingPin pin = _options.Pins.Single(p => p.Direction == direction);
 			_controller.Write(pin.Number, pinValue);
 		}
 
