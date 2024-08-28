@@ -1,6 +1,7 @@
 ﻿using Iot.Device.Media;
 
-namespace RaspberryPi.Common.Options;
+namespace RaspberryPi.Camera.Options;
+
 public class VideoDeviceOptions {
 	public uint Width { get; set; }
 	public uint Height { get; set; }

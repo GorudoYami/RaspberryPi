@@ -8,24 +8,15 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace RaspberryPi.Common.Gpio;
-public class DebugGpioControllerProvider : IGpioControllerProvider {
-	private class DebugPin {
-		public PinMode Mode { get; }
-		public PinValue Value { get; set; }
 
-		public DebugPin(PinMode mode = PinMode.Output, PinValue? value = null) {
-			Mode = mode;
-			Value = value ?? PinValue.Low;
-		}
+public class DebugGpioControllerProvider(ILogger<IGpioControllerProvider> logger)
+	: IGpioControllerProvider {
+	private class DebugPin(PinMode mode = PinMode.Output, PinValue? value = null) {
+		public PinMode Mode { get; } = mode;
+		public PinValue Value { get; set; } = value ?? PinValue.Low;
 	}
 
-	private readonly Dictionary<int, DebugPin> _pins;
-	private readonly ILogger<IGpioControllerProvider> _logger;
-
-	public DebugGpioControllerProvider(ILogger<IGpioControllerProvider> logger) {
-		_pins = [];
-		_logger = logger;
-	}
+	private readonly Dictionary<int, DebugPin> _pins = [];
 
 	public void ClosePin(int pinNumber) {
 		throw new NotImplementedException();
@@ -48,7 +39,7 @@ public class DebugGpioControllerProvider : IGpioControllerProvider {
 			throw new InvalidOperationException($"Pin {pinNumber} already open");
 		}
 
-		_logger.LogDebug("Opening pin {PinNumber}", pinNumber);
+		logger.LogDebug("Opening pin {PinNumber}", pinNumber);
 		_pins[pinNumber] = new DebugPin();
 		return new DebugGpioPinProvider();
 	}
@@ -58,7 +49,7 @@ public class DebugGpioControllerProvider : IGpioControllerProvider {
 			throw new InvalidOperationException($"Pin {pinNumber} already open");
 		}
 
-		_logger.LogDebug("Opening pin {PinNumber} with mode {PinMode}", pinNumber, pinMode);
+		logger.LogDebug("Opening pin {PinNumber} with mode {PinMode}", pinNumber, pinMode);
 		_pins[pinNumber] = new DebugPin(pinMode);
 		return new DebugGpioPinProvider();
 	}
@@ -68,7 +59,7 @@ public class DebugGpioControllerProvider : IGpioControllerProvider {
 			throw new InvalidOperationException($"Pin {pinNumber} already open");
 		}
 
-		_logger.LogDebug("Opening pin {PinNumber} with mode {PinMode}, initial value {PinInitialValue}", pinNumber, pinMode, initialValue);
+		logger.LogDebug("Opening pin {PinNumber} with mode {PinMode}, initial value {PinInitialValue}", pinNumber, pinMode, initialValue);
 		_pins[pinNumber] = new DebugPin(pinMode, initialValue);
 		return new DebugGpioPinProvider();
 	}

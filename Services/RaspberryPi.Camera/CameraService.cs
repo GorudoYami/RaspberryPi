@@ -8,6 +8,7 @@ using System;
 using System.Linq;
 
 namespace RaspberryPi.Camera;
+
 public class CameraService : ICameraService {
 	public bool Enabled => _options.Enabled;
 	public bool IsInitialized { get; private set; }

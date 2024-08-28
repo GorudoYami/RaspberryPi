@@ -1,11 +1,12 @@
 ﻿using Iot.Device.Media;
 using Microsoft.Extensions.Options;
+using RaspberryPi.Camera.Options;
 using RaspberryPi.Common.Events;
-using RaspberryPi.Common.Options;
 using RaspberryPi.Common.Providers;
 using System;
 
 namespace RaspberryPi.Camera;
+
 public class VideoDeviceProvider : IVideoDeviceProvider, IDisposable {
 	public event EventHandler<VideoDeviceImageCapturedEventArgs> ImageCaptured;
 

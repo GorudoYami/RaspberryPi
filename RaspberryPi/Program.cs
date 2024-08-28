@@ -9,6 +9,7 @@ using System;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace RaspberryPi;
+
 public static class Program {
 	public static void Main() {
 		try {

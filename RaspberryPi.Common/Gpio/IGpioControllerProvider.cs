@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace RaspberryPi.Common.Gpio;
+
 public interface IGpioControllerProvider {
 	void ClosePin(int pinNumber);
 	PinMode GetPinMode(int pinNumber);

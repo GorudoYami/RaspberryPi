@@ -14,23 +14,18 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace RaspberryPi.TcpServer;
-public class TcpServerService : ITcpServerService, IDisposable, IAsyncDisposable {
+public class TcpServerService(
+	IOptions<TcpServerModuleOptions> options,
+	ILogger<ITcpServerService> logger,
+	IServerProtocol protocol)
+	: ITcpServerService, IDisposable, IAsyncDisposable {
 	public bool Enabled { get; }
 
-	private readonly Dictionary<IPAddress, TcpClientInfo> _clients;
-	private readonly TcpListener _listener;
-	private readonly ILogger<ITcpServerService> _logger;
-	private readonly IServerProtocol _protocol;
+	private readonly Dictionary<IPAddress, TcpClientInfo> _clients = [];
+	private readonly TcpListener _listener = new(Networking.GetAddressFromHostname(options.Value.Host), options.Value.MainPort);
 	private CancellationTokenSource _cancellationTokenSource;
 	private Task _listenTask;
 	private Task _readMessagesTask;
-
-	public TcpServerService(IOptions<TcpServerModuleOptions> options, ILogger<ITcpServerService> logger, IServerProtocol protocol) {
-		_logger = logger;
-		_clients = [];
-		_listener = new TcpListener(Networking.GetAddressFromHostname(options.Value.Host), options.Value.MainPort);
-		_protocol = protocol;
-	}
 
 	public void Start() {
 		_cancellationTokenSource ??= new CancellationTokenSource();
@@ -67,8 +62,8 @@ public class TcpServerService : ITcpServerService, IDisposable, IAsyncDisposable
 	}
 
 	private void CleanupClient(IPAddress address, bool remove = false) {
-		if (_clients.ContainsKey(address)) {
-			_clients[address].Dispose();
+		if (_clients.TryGetValue(address, out TcpClientInfo value)) {
+			value.Dispose();
 
 			if (remove) {
 				_clients.Remove(address);
@@ -103,16 +98,16 @@ public class TcpServerService : ITcpServerService, IDisposable, IAsyncDisposable
 
 	private async Task ListenAsync(CancellationToken cancellationToken) {
 		while (cancellationToken.IsCancellationRequested == false) {
-			TcpClient client = await _listener.AcceptTcpClientAsync();
+			TcpClient client = await _listener.AcceptTcpClientAsync(cancellationToken);
 			IPAddress clientAddress = (client.Client.RemoteEndPoint as IPEndPoint)?.Address
 				?? throw new InvalidOperationException("Client remote endpoint is invalid");
 
 			if (client.Connected) {
 				try {
-					_clients[clientAddress] = new TcpClientInfo(client, _protocol.Delimiter);
+					_clients[clientAddress] = new TcpClientInfo(client, protocol.Delimiter);
 				}
 				catch (Exception ex) {
-					_logger.LogError(ex, "Communication initialization with client {ClientAddress} failed", clientAddress.ToString());
+					logger.LogError(ex, "Communication initialization with client {ClientAddress} failed", clientAddress.ToString());
 					CleanupClient(clientAddress, true);
 				}
 			}
@@ -125,7 +120,7 @@ public class TcpServerService : ITcpServerService, IDisposable, IAsyncDisposable
 				await Task.WhenAll(_clients.Values.Select(x => ReadIncomingMessage(x, cancellationToken)));
 			}
 			catch (Exception ex) {
-				_logger.LogError(ex, "Error occured while reading messages from clients");
+				logger.LogError(ex, "Error occured while reading messages from clients");
 			}
 		}
 	}
@@ -134,7 +129,7 @@ public class TcpServerService : ITcpServerService, IDisposable, IAsyncDisposable
 		byte[] message = await clientInfo.IO.ReadMessageAsync(cancellationToken);
 
 		if (message?.Length > 0) {
-			_protocol.ParseMessage(message);
+			protocol.ParseMessage(message);
 		}
 	}
 

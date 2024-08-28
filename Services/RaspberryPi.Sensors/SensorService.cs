@@ -15,28 +15,22 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace RaspberryPi.Sensors;
-public class SensorService
+
+public class SensorService(
+	IOptions<SensorsServiceOptions> options,
+	ILogger<ISensorService> logger,
+	IGpioControllerProvider controller)
 	: ISensorService, IDisposable, IAsyncDisposable {
 	public bool Enabled { get; private set; }
 	public bool IsInitialized { get; private set; }
 
 	public event EventHandler<SensorTriggeredEventArgs> SensorTriggered;
 
-	private readonly ICollection<Sensor> _sensors;
-	private readonly ILogger<ISensorService> _logger;
-	private readonly IGpioControllerProvider _controller;
-	private readonly int _reportDistance;
-	private readonly int _poolingPeriodSeconds;
+	private readonly ICollection<Sensor> _sensors = options.Value.Sensors;
+	private readonly int _reportDistance = options.Value.ReportDistance;
+	private readonly int _poolingPeriodSeconds = options.Value.PoolingPeriod;
 	private CancellationTokenSource _cancellationTokenSource;
 	private Task _mainTask;
-
-	public SensorService(IOptions<SensorsServiceOptions> options, ILogger<ISensorService> logger, IGpioControllerProvider controller) {
-		_logger = logger;
-		_controller = controller;
-		_reportDistance = options.Value.ReportDistance;
-		_poolingPeriodSeconds = options.Value.PoolingPeriod;
-		_sensors = options.Value.Sensors;
-	}
 
 	public Task InitializeAsync(CancellationToken cancellationToken = default) {
 		return Task.Run(() => {
@@ -44,13 +38,13 @@ public class SensorService
 				foreach (int pinNumber in sensor.Pins
 					.Where(x => x.Key == SensorPinType.Echo)
 					.Select(x => x.Value)) {
-					_controller.OpenPin(pinNumber, PinMode.Input);
+					controller.OpenPin(pinNumber, PinMode.Input);
 				}
 
 				foreach (int pinNumber in sensor.Pins
 					.Where(x => x.Key == SensorPinType.Trig)
 					.Select(x => x.Value)) {
-					_controller.OpenPin(pinNumber, PinMode.Output);
+					controller.OpenPin(pinNumber, PinMode.Output);
 				}
 			}
 		}, cancellationToken);
@@ -69,12 +63,12 @@ public class SensorService
 				int distance = Measure(sensor);
 
 				if (sensor.IsTriggered() == false && _reportDistance >= distance) {
-					_logger.LogDebug("[{SensorName}] Triggered at {Distance}", sensor.Name, distance);
+					logger.LogDebug("[{SensorName}] Triggered at {Distance}", sensor.Name, distance);
 					sensor.SetTriggered();
 					SensorTriggered?.Invoke(this, new SensorTriggeredEventArgs(sensor.Name, distance));
 				}
 				else if (sensor.IsTriggered() && _reportDistance <= distance) {
-					_logger.LogDebug("[{SensorName}] Resetting sensor at {Distance}", sensor.Name, distance);
+					logger.LogDebug("[{SensorName}] Resetting sensor at {Distance}", sensor.Name, distance);
 					sensor.Reset();
 				}
 			}
@@ -87,13 +81,13 @@ public class SensorService
 
 	private int Measure(Sensor sensor) {
 		int trigPinNumber = sensor.Pins[SensorPinType.Trig];
-		_controller.Write(trigPinNumber, PinValue.High);
-		_controller.Write(trigPinNumber, PinValue.Low);
+		controller.Write(trigPinNumber, PinValue.High);
+		controller.Write(trigPinNumber, PinValue.Low);
 
 		int echoPinNumber = sensor.Pins[SensorPinType.Echo];
-		WaitUntil(() => _controller.Read(echoPinNumber), PinValue.High);
+		WaitUntil(() => controller.Read(echoPinNumber), PinValue.High);
 		var stopwatch = Stopwatch.StartNew();
-		WaitUntil(() => _controller.Read(echoPinNumber), PinValue.Low);
+		WaitUntil(() => controller.Read(echoPinNumber), PinValue.Low);
 		stopwatch.Stop();
 
 		return (int)Math.Round(stopwatch.Elapsed.TotalMilliseconds * 1000 / 58, 0);

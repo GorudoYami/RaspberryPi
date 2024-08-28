@@ -15,39 +15,31 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace RaspberryPi.Driving;
-public class DrivingService : IDrivingService, IDisposable {
+
+public class DrivingService(
+	IOptions<DrivingServiceOptions> options,
+	ILogger<IDrivingService> logger,
+	IGpioControllerProvider controller)
+	: IDrivingService, IDisposable {
 	public bool Enabled => _options.Enabled;
 	public bool IsInitialized { get; private set; }
 
-	private readonly DrivingServiceOptions _options;
-	private readonly IGpioControllerProvider _controller;
-	private readonly ILogger<IDrivingService> _logger;
-	private readonly Dictionary<Direction, IPwmChannelProvider> _pwmChannels;
-	private double _turnPower;
-	private double _drivePower;
-	private Direction? _turnDirection;
-	private Direction? _driveDirection;
-
-	public DrivingService(IOptions<DrivingServiceOptions> options, ILogger<IDrivingService> logger, IGpioControllerProvider controller) {
-		_options = options.Value;
-		_turnPower = 0;
-		_drivePower = 0;
-		_turnDirection = null;
-		_driveDirection = null;
-		_controller = controller;
-		_logger = logger;
-		_pwmChannels = [];
-	}
+	private readonly DrivingServiceOptions _options = options.Value;
+	private readonly Dictionary<Direction, IPwmChannelProvider> _pwmChannels = [];
+	private double _turnPower = 0;
+	private double _drivePower = 0;
+	private Direction? _turnDirection = null;
+	private Direction? _driveDirection = null;
 
 	public Task InitializeAsync(CancellationToken cancellationToken = default) {
 		return Task.Run(() => {
 			foreach (DrivingPin pin in _options.Pins) {
 				if (pin is DrivingPwmPin pwmPin) {
-					IPwmChannelProvider pwmChannel = _controller.GetPwmChannel(pwmPin.Chip, pwmPin.Number, 400, 0);
+					IPwmChannelProvider pwmChannel = controller.GetPwmChannel(pwmPin.Chip, pwmPin.Number, 400, 0);
 					_pwmChannels.Add(pin.Direction, pwmChannel);
 				}
 				else {
-					_controller.OpenPin(pin.Number, PinMode.Output);
+					controller.OpenPin(pin.Number, PinMode.Output);
 				}
 			}
 		}, cancellationToken);
@@ -55,7 +47,7 @@ public class DrivingService : IDrivingService, IDisposable {
 
 	private void Deinitialize() {
 		foreach (DrivingPin pin in _options.Pins.Where(x => (x is DrivingPwmPin) == false)) {
-			_controller.ClosePin(pin.Number);
+			controller.ClosePin(pin.Number);
 		}
 
 		foreach (IPwmChannelProvider pwmChannel in _pwmChannels.Values) {
@@ -69,7 +61,7 @@ public class DrivingService : IDrivingService, IDisposable {
 			return;
 		}
 
-		_logger.LogDebug("Turning left with {Power} power", power);
+		logger.LogDebug("Turning left with {Power} power", power);
 		_turnDirection = Direction.Left;
 		_turnPower = power;
 		UpdateTurnPins();
@@ -80,14 +72,14 @@ public class DrivingService : IDrivingService, IDisposable {
 			return;
 		}
 
-		_logger.LogDebug("Turning right with {Power} power", power);
+		logger.LogDebug("Turning right with {Power} power", power);
 		_turnDirection = Direction.Right;
 		_turnPower = power;
 		UpdateTurnPins();
 	}
 
 	public void Straight() {
-		_logger.LogDebug("Resetting turn");
+		logger.LogDebug("Resetting turn");
 		_turnDirection = null;
 		_turnPower = 0;
 		UpdateTurnPins();
@@ -98,7 +90,7 @@ public class DrivingService : IDrivingService, IDisposable {
 			return;
 		}
 
-		_logger.LogDebug("Going forward with {Power} power", power);
+		logger.LogDebug("Going forward with {Power} power", power);
 		_driveDirection = Direction.Forward;
 		_drivePower = power;
 		UpdateDrivePins();
@@ -109,7 +101,7 @@ public class DrivingService : IDrivingService, IDisposable {
 			return;
 		}
 
-		_logger.LogDebug("Going back with {Power} power", power);
+		logger.LogDebug("Going back with {Power} power", power);
 		_driveDirection = Direction.Back;
 		_drivePower = power;
 		UpdateDrivePins();
@@ -121,12 +113,12 @@ public class DrivingService : IDrivingService, IDisposable {
 		_drivePower = 0;
 		_turnPower = 0;
 
-		_logger.LogDebug("Stopping");
+		logger.LogDebug("Stopping");
 		UpdateDrivePins();
 		UpdateTurnPins();
 	}
 
-	private void UpdateTurnPins() {
+	private static void UpdateTurnPins() {
 		// TODO: Change since it will be a servo
 	}
 
@@ -153,7 +145,7 @@ public class DrivingService : IDrivingService, IDisposable {
 
 	private void Write(Direction direction, PinValue pinValue) {
 		DrivingPin pin = _options.Pins.Single(p => p.Direction == direction);
-		_controller.Write(pin.Number, pinValue);
+		controller.Write(pin.Number, pinValue);
 	}
 
 	private void StartPwm(Direction direction) {

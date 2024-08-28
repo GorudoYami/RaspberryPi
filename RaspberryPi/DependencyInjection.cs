@@ -2,8 +2,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using RaspberryPi.Camera;
 using RaspberryPi.Camera.Options;
-using RaspberryPi.Common.Extensions;
-using RaspberryPi.Common.Options;
 using RaspberryPi.Common.Protocols;
 using RaspberryPi.Common.Providers;
 using RaspberryPi.Common.Services;
@@ -16,6 +14,7 @@ using RaspberryPi.TcpServer;
 using System;
 
 namespace RaspberryPi;
+
 public static class DependencyInjection {
 	private static bool IsDebug() {
 		return Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") == "Debug";
@@ -39,18 +38,17 @@ public static class DependencyInjection {
 
 	public static IServiceCollection AddServices(this IServiceCollection services) {
 		return services
-			.AddModule<IRaspberryPiModule, RaspberryPiModule>()
-			.AddModule<ICameraService, CameraService>()
-			.AddModule<ISensorService, SensorService>()
-			.AddModule<IDrivingService, DrivingService>()
-			.AddModule<ITcpServerService, TcpServerService>();
+			.AddSingleton<IRaspberryPiModule, RaspberryPiModule>()
+			.AddSingleton<ICameraService, CameraService>()
+			.AddSingleton<ISensorService, SensorService>()
+			.AddSingleton<IDrivingService, DrivingService>()
+			.AddSingleton<ITcpServerService, TcpServerService>();
 	}
 
 	public static IServiceCollection AddOptions(this IServiceCollection services, IConfiguration configuration) {
 		services
 			.AddOptions<RaspberryPiModuleOptions>()
 			.Bind(configuration.GetRequiredSection(nameof(RaspberryPiModuleOptions)))
-			.Validate(RaspberryPiModuleOptions.Validate)
 			.ValidateOnStart();
 
 		services

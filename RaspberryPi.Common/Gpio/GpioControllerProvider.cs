@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace RaspberryPi.Common.Gpio;
+
 public class GpioControllerProvider : IGpioControllerProvider, IDisposable {
 	public int PinCount => _controller.PinCount;
 	public PinNumberingScheme NumberingScheme => _controller.NumberingScheme;
@@ -33,15 +34,15 @@ public class GpioControllerProvider : IGpioControllerProvider, IDisposable {
 	}
 
 	public IGpioPinProvider OpenPin(int pinNumber) {
-		return new GpioPinProvider(_controller.OpenPin(pinNumber));
+		return new GpioPinProvider();
 	}
 
 	public IGpioPinProvider OpenPin(int pinNumber, PinMode pinMode) {
-		return new GpioPinProvider(_controller.OpenPin(pinNumber, pinMode));
+		return new GpioPinProvider();
 	}
 
 	public IGpioPinProvider OpenPin(int pinNumber, PinMode pinMode, PinValue initialValue) {
-		return new GpioPinProvider(_controller.OpenPin(pinNumber, pinMode, initialValue));
+		return new GpioPinProvider();
 	}
 
 	public void ClosePin(int pinNumber) {
