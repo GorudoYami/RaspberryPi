@@ -1,7 +1,7 @@
-﻿using RaspberryPi.Common.Modules.Providers;
+﻿using RaspberryPi.Common.Services.Providers;
 
-namespace RaspberryPi.Common.Providers;
-
-public interface INetworkingResolver {
-	INetworkingProvider? GetNetworking();
+namespace RaspberryPi.Common.Resolvers {
+	public interface INetworkingResolver {
+		INetworkingProvider GetNetworking();
+	}
 }

@@ -1,15 +1,18 @@
-﻿using System.Net;
+﻿using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 
-namespace RaspberryPi.Common.Utilities;
+namespace RaspberryPi.Common.Utilities {
+	public static class Networking {
+		public static IPAddress GetAddressFromHostname(string hostname) {
+			if (IPAddress.TryParse(hostname, out IPAddress ipAddress)) {
+				return ipAddress;
+			}
 
-public static class Networking {
-	public static IPAddress GetAddressFromHostname(string hostname, AddressFamily addressFamily = AddressFamily.InterNetwork) {
-		if (IPAddress.TryParse(hostname, out IPAddress? ipAddress)) {
-			return ipAddress;
+			return Dns.GetHostEntry(hostname)
+				.AddressList
+				.Where(x => x.AddressFamily == AddressFamily.InterNetwork)
+				.First();
 		}
-
-		IPHostEntry host = Dns.GetHostEntry(hostname, addressFamily);
-		return host.AddressList[0];
 	}
 }

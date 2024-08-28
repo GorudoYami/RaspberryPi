@@ -1,30 +1,27 @@
-﻿using RaspberryPi.Common.Modules;
-using RaspberryPi.Common.Modules.Providers;
-using RaspberryPi.Common.Providers;
+﻿using RaspberryPi.Common.Resolvers;
+using RaspberryPi.Common.Services;
+using RaspberryPi.Common.Services.Providers;
 
-namespace RaspberryPi.Providers;
+namespace RaspberryPi.Resolvers {
+	public class MqttResolver : IMqttResolver {
+		private readonly IModemMqttService _modemMqttModule;
+		private readonly IMqttClientService _mqttModule;
 
-public class MqttResolver : IMqttResolver {
-	private readonly IModemModule _modemModule;
-	private readonly IMqttModule _mqttModule;
-
-	public MqttResolver(IModemModule modemModule, IMqttModule mqttModule) {
-		_modemModule = modemModule;
-		_mqttModule = mqttModule;
-	}
-
-	public IMqttProvider? GetMqtt() {
-		IMqttModule defaultMqtt = _mqttModule;
-		IMqttModule modemMqtt = _modemModule;
-
-		if (defaultMqtt.Connected) {
-			return defaultMqtt;
+		public MqttResolver(IModemMqttService modemMqttModule, IMqttClientService mqttModule) {
+			_modemMqttModule = modemMqttModule;
+			_mqttModule = mqttModule;
 		}
 
-		if (modemMqtt.Connected) {
-			return modemMqtt;
-		}
+		public IMqttProvider GetMqtt() {
+			if (_mqttModule.Connected) {
+				return _mqttModule;
+			}
 
-		return null;
+			//if (_modemMqttModule.Connected) {
+			//	return _modemMqttModule;
+			//}
+
+			return null;
+		}
 	}
 }

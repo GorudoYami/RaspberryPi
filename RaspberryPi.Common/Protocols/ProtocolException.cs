@@ -1,4 +1,7 @@
-﻿namespace RaspberryPi.Common.Protocols;
+﻿using System;
 
-public class ProtocolException(string message) : Exception(message) {
+namespace RaspberryPi.Common.Protocols {
+	public class ProtocolException : Exception {
+		public ProtocolException(string message) : base(message) { }
+	}
 }

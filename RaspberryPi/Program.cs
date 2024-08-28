@@ -2,36 +2,59 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NLog;
 using NLog.Extensions.Logging;
-using RaspberryPi.Common.Modules;
+using RaspberryPi.Common.Services;
+using System;
+using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
-namespace RaspberryPi;
+namespace RaspberryPi {
+	public static class Program {
+		public static void Main() {
+			try {
+				InitializeNlog();
 
-public static class Program {
-	public static void Main() {
-		using ServiceProvider serviceProvide = CreateServiceProvider();
-		IRaspberryPiModule raspberryPi = serviceProvide.GetRequiredService<IRaspberryPiModule>();
+				using (ServiceProvider serviceProvide = CreateServiceProvider()) {
+					IRaspberryPiModule raspberryPi = serviceProvide.GetRequiredService<IRaspberryPiModule>();
 
-		raspberryPi.RunAsync().GetAwaiter().GetResult();
-	}
+					raspberryPi.RunAsync().GetAwaiter().GetResult();
+				}
+			}
+			finally {
+				DeinitializeNlog();
+			}
+		}
 
-	private static ServiceProvider CreateServiceProvider() {
-		IConfiguration configuration = new ConfigurationBuilder()
-			.SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-			.AddWritableAppSettings(reloadOnChange: true)
-			.Build();
+		private static ServiceProvider CreateServiceProvider() {
+			IConfiguration configuration = new ConfigurationBuilder()
+				.SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+				.AddWritableAppSettings(reloadOnChange: true)
+				.Build();
 
-		IServiceCollection services = new ServiceCollection()
-			.AddSingleton(configuration)
-			.AddProtocols()
-			.AddModules()
-			.AddOptions()
-			.AddLogging(builder => {
-				builder.ClearProviders();
-				builder.SetMinimumLevel(LogLevel.Debug);
-				builder.AddNLog();
-			});
+			IServiceCollection services = new ServiceCollection()
+				.AddSingleton(configuration)
+				.AddProtocols()
+				.AddServices()
+				.AddOptions()
+				.AddLogging(builder => {
+					builder.ClearProviders();
+					builder.SetMinimumLevel(LogLevel.Debug);
+					builder.AddNLog();
+				});
 
-		return services.BuildServiceProvider();
+			return services.BuildServiceProvider();
+		}
+
+		private static void InitializeNlog() {
+			LogManager.ThrowExceptions = true;
+			LogManager.ThrowConfigExceptions = true;
+			LogManager
+				.Setup()
+				.LoadConfigurationFromFile("nlog.config");
+		}
+
+		private static void DeinitializeNlog() {
+			LogManager.Shutdown();
+		}
 	}
 }

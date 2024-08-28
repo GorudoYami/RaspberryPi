@@ -1,6 +1,13 @@
-﻿namespace RaspberryPi.Common.Protocols;
+﻿using System;
 
-public class MessageReceivedEventArgs(MessageType type, byte value) : EventArgs {
-	public MessageType Type { get; } = type;
-	public byte Value { get; } = value;
+namespace RaspberryPi.Common.Protocols {
+	public class MessageReceivedEventArgs : EventArgs {
+		public MessageType Type { get; }
+		public byte Value { get; }
+
+		public MessageReceivedEventArgs(MessageType type, byte value) {
+			Type = type;
+			Value = value;
+		}
+	}
 }

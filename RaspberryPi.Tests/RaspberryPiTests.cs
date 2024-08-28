@@ -1,12 +1,11 @@
 ﻿using GorudoYami.Common.Asynchronous;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using NUnit.Framework;
-using RaspberryPi.Common.Modules;
 using RaspberryPi.Common.Protocols;
-using RaspberryPi.Models;
-using RasperryPi.Common.Tests;
+using RaspberryPi.Common.Services;
+using RaspberryPi.Options;
+using RaspberryPi.Tests.Common;
 
 namespace RaspberryPi.Tests;
 
@@ -16,14 +15,13 @@ public class RaspberryPiTests {
 	private RaspberryPiModule? _raspberryPiModule;
 
 	private Mock<IOptions<RaspberryPiModuleOptions>> _mockedOptions;
-	private Mock<ILogger<IRaspberryPiModule>> _mockedLogger;
+	private TestLogger<IRaspberryPiModule> _testLogger;
 	private Mock<ICancellationTokenProvider> _mockedCancellationTokenProvider;
-	private Mock<IClientProtocol> _mockedClientProtocol;
-	private Mock<IClientModule> _mockedTcpClientModule;
-	private Mock<IDrivingModule> _mockedDrivingModule;
-	private Mock<IModemModule> _mockedModemModule;
-	private Mock<ISensorsModule> _mockedSensorsModule;
-	private Mock<ICameraModule> _mockedCameraModule;
+	private Mock<IServerProtocol> _mockedServerProtocol;
+	private Mock<IDrivingService> _mockedDrivingService;
+	private Mock<ISensorService> _mockedSensorService;
+	private Mock<ICameraService> _mockedCameraService;
+	private Mock<ITcpServerService> _mockedTcpServerService;
 
 	public RaspberryPiTests() {
 		_options = new RaspberryPiModuleOptions() {
@@ -35,31 +33,35 @@ public class RaspberryPiTests {
 
 	[SetUp]
 	public void SetUp() {
-		_mockedLogger = MockedLoggerProvider.GetMockedLogger<IRaspberryPiModule>();
+		_testLogger = new TestLogger<IRaspberryPiModule>();
 		_mockedOptions = new Mock<IOptions<RaspberryPiModuleOptions>>();
 		_mockedCancellationTokenProvider = new Mock<ICancellationTokenProvider>();
-		_mockedClientProtocol = new Mock<IClientProtocol>();
-		_mockedTcpClientModule = new Mock<IClientModule>();
-		_mockedDrivingModule = new Mock<IDrivingModule>();
-		_mockedCameraModule = new Mock<ICameraModule>();
-		_mockedModemModule = new Mock<IModemModule>();
-		_mockedSensorsModule = new Mock<ISensorsModule>();
+		_mockedServerProtocol = new Mock<IServerProtocol>();
+		_mockedDrivingService = new Mock<IDrivingService>();
+		_mockedCameraService = new Mock<ICameraService>();
+		_mockedSensorService = new Mock<ISensorService>();
+		_mockedTcpServerService = new Mock<ITcpServerService>();
 
 		_raspberryPiModule = null;
 	}
 
-	private RaspberryPiModule GetInstance() {
-		return _raspberryPiModule ??= new RaspberryPiModule(
-			_mockedOptions.Object,
-			_mockedLogger.Object,
-			_mockedCancellationTokenProvider.Object,
-			_mockedClientProtocol.Object,
-			_mockedTcpClientModule.Object,
-			_mockedDrivingModule.Object,
-			_mockedModemModule.Object,
-			_mockedCameraModule.Object,
-			_mockedSensorsModule.Object
-		);
+	[TearDown]
+	public void TearDown() {
+		_testLogger.Dispose();
+	}
+
+	private RaspberryPiModule? GetInstance() {
+		//return _raspberryPiModule ??= new RaspberryPiModule(
+		//	_mockedOptions.Object,
+		//	_testLogger,
+		//	_mockedCancellationTokenProvider.Object,
+		//	_mockedServerProtocol.Object,
+		//	_mockedDrivingService.Object,
+		//	_mockedCameraService.Object,
+		//	_mockedSensorService.Object,
+		//	_mockedTcpServerService.Object
+		//);
+		return null;
 	}
 
 	[Test]
