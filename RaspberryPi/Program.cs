@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NLog;
 using NLog.Extensions.Logging;
-using RaspberryPi.Common.Modules;
+using RaspberryPi.Common.Services;
 using System;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
@@ -34,7 +34,7 @@ namespace RaspberryPi {
 			IServiceCollection services = new ServiceCollection()
 				.AddSingleton(configuration)
 				.AddProtocols()
-				.AddModules()
+				.AddServices()
 				.AddOptions()
 				.AddLogging(builder => {
 					builder.ClearProviders();

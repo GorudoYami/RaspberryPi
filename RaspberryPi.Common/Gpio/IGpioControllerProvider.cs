@@ -11,12 +11,11 @@ namespace RaspberryPi.Common.Gpio {
 		PinMode GetPinMode(int pinNumber);
 		IPwmChannelProvider GetPwmChannel(int chip, int channel, int frequency, double dutyCyclePercentage);
 		bool IsPinModeSupported(int pinNumber, PinMode mode);
-		GpioPin OpenPin(int pinNumber);
-		GpioPin OpenPin(int pinNumber, PinMode pinMode);
-		GpioPin OpenPin(int pinNumber, PinMode pinMode, PinValue initialValue);
+		IGpioPinProvider OpenPin(int pinNumber);
+		IGpioPinProvider OpenPin(int pinNumber, PinMode pinMode);
+		IGpioPinProvider OpenPin(int pinNumber, PinMode pinMode, PinValue initialValue);
 		ComponentInformation QueryComponentInformation();
 		PinValue Read(int pinNumber);
-		void Read(Span<PinValuePair> pinValuePairs);
 		void SetPinMode(int pinNumber, PinMode mode);
 		void Subscribe(int pinNumber, PinEventTypes eventTypes, PinChangeEventHandler callback);
 		void Toggle(int pinNumber);

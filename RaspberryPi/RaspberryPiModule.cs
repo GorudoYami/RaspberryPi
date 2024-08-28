@@ -1,75 +1,69 @@
 ﻿using GorudoYami.Common.Asynchronous;
-using GorudoYami.Common.Modules;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RaspberryPi.Common.Events;
-using RaspberryPi.Common.Modules;
 using RaspberryPi.Common.Protocols;
+using RaspberryPi.Common.Services;
 using RaspberryPi.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Net.NetworkInformation;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace RaspberryPi {
 	public class RaspberryPiModule : IRaspberryPiModule {
 		public bool Enabled => true;
-		public bool IsInitialized { get; private set; }
 
 		private readonly RaspberryPiModuleOptions _options;
 		private readonly ILogger<IRaspberryPiModule> _logger;
+		private readonly IEnumerable<IService> _services;
 		private readonly CancellationToken _cancellationToken;
-		private readonly IServerProtocol _serverProtocol;
-		private readonly IDrivingModule _drivingModule;
-		private readonly ICameraModule _cameraModule;
-		private readonly ISensorsModule _sensorsModule;
-		private readonly IServerModule _serverModule;
-		private readonly ICollection<IModule> _modules;
+		private readonly ICommunicationProtocol _communicationProtocol;
+		private readonly ITcpServerService _tcpServerService;
+		private readonly ISensorService _sensorService;
+		private readonly IDrivingService _drivingService;
+		private readonly ICameraService _cameraService;
 
 		public RaspberryPiModule(
 			IOptions<RaspberryPiModuleOptions> options,
 			ILogger<IRaspberryPiModule> logger,
+			IEnumerable<IService> services,
 			ICancellationTokenProvider cancellationTokenProvider,
-			IServerProtocol serverProtocol,
-			IDrivingModule drivingModule,
-			ICameraModule cameraModule,
-			ISensorsModule sensorsModule,
-			IServerModule serverModule) {
+			ICommunicationProtocol communicationProtocol,
+			ISensorService sensorService,
+			IDrivingService drivingService,
+			ICameraService cameraService,
+			ITcpServerService tcpServerService) {
 			_options = options.Value;
 			_logger = logger;
+			_services = services;
 			_cancellationToken = cancellationTokenProvider.GetToken();
-			_serverProtocol = serverProtocol;
-			_drivingModule = drivingModule;
-			_cameraModule = cameraModule;
-			_sensorsModule = sensorsModule;
-			_serverModule = serverModule;
-
-			_modules = new List<IModule>() {
-				_drivingModule,
-				_cameraModule,
-				_sensorsModule,
-				_serverModule
-			};
+			_communicationProtocol = communicationProtocol;
+			_sensorService = sensorService;
+			_drivingService = drivingService;
+			_cameraService = cameraService;
+			_tcpServerService = tcpServerService;
 		}
 
 		public async Task InitializeAsync(CancellationToken cancellationToken = default) {
 			try {
-				_logger.LogDebug("Found {ModulesCount} modules", _modules.Count);
-				_logger.LogDebug("Initializing modules...");
+				_logger.LogDebug("Found {ServiceCount} services.", _services.Count());
+				_logger.LogDebug("Initializing services...");
 
-				foreach (IModule module in _modules.Where(x => x.IsInitialized == false && x.Enabled)) {
-					await module.InitializeAsync(cancellationToken);
+				var initializableServices = _services.Where(x => x.Enabled && x is IInitializableService).Cast<IInitializableService>();
+				foreach (IInitializableService service in initializableServices) {
+					await service.InitializeAsync(cancellationToken);
 				}
+				_logger.LogDebug("Services initialized: {ServicesInitializedCount}.", initializableServices.Count());
 
 				if (_options.DefaultSafety) {
-					_sensorsModule.SensorTriggered += OnSensorTriggered;
+					_logger.LogDebug("Enabling safety by default");
+					_sensorService.SensorTriggered += OnSensorTriggered;
 				}
 
-				_serverProtocol.MessageReceived += OnMessageReceived;
-				_logger.LogDebug("Modules initialized: {ModulesInitializedCount}", _modules.Count(x => x.IsInitialized));
+				_communicationProtocol.MessageReceived += OnMessageReceived;
+				_logger.LogDebug("Initialization completed.");
 			}
 			catch (Exception ex) {
 				_logger.LogCritical(ex, "Caught error during initialization");
@@ -77,40 +71,42 @@ namespace RaspberryPi {
 		}
 
 		private void OnSensorTriggered(object sender, SensorTriggeredEventArgs e) {
-			_drivingModule.Stop();
+			_drivingService.Stop();
 		}
 
 		private void OnMessageReceived(object sender, MessageReceivedEventArgs e) {
+			_logger.LogDebug("Message received: {MessageType} with value {MessageValue}", e.Type.ToString(), e.Value);
+
 			switch (e.Type) {
 				case MessageType.DriveForward:
-					_drivingModule.Forward(e.Value / 255d);
+					_drivingService.Forward(e.Value / 255d);
 					break;
 				case MessageType.DriveBackward:
-					_drivingModule.Backward(e.Value / 255d);
+					_drivingService.Backward(e.Value / 255d);
 					break;
 				case MessageType.DriveLeft:
-					_drivingModule.Left(e.Value / 255d);
+					_drivingService.Left(e.Value / 255d);
 					break;
 				case MessageType.DriveRight:
-					_drivingModule.Right(e.Value / 2555d);
+					_drivingService.Right(e.Value / 2555d);
 					break;
 				case MessageType.DriveStraight:
-					_drivingModule.Straight();
+					_drivingService.Straight();
 					break;
 				case MessageType.DriveStop:
-					_drivingModule.Stop();
+					_drivingService.Stop();
 					break;
 				case MessageType.SensorsDisable:
-					_sensorsModule.SensorTriggered -= OnSensorTriggered;
+					_sensorService.SensorTriggered -= OnSensorTriggered;
 					break;
 				case MessageType.SensorsEnable:
-					_sensorsModule.SensorTriggered += OnSensorTriggered;
+					_sensorService.SensorTriggered += OnSensorTriggered;
 					break;
 				case MessageType.CameraEnable:
-					_cameraModule.Start();
+					_sensorService.Start();
 					break;
 				case MessageType.CameraDisable:
-					_cameraModule.Stop();
+					_cameraService.Stop();
 					break;
 				case MessageType.Unknown:
 					_logger.LogError("Unknown message type received ({MessageType}) with value ({MessageValue})", (byte)e.Type, e.Value);
@@ -122,25 +118,31 @@ namespace RaspberryPi {
 			await InitializeAsync();
 
 			try {
-				_serverModule.Start();
+				_tcpServerService.Start();
 			}
 			catch (Exception ex) {
 				_logger.LogCritical(ex, "Caught error during server startup");
 			}
 
 			while (_cancellationToken.IsCancellationRequested == false) {
-				try {
-					Thread.Sleep(10000);
-					ReportStatus();
-				}
-				catch (Exception ex) {
-					_logger.LogCritical(ex, "Caught error in main loop.");
-				}
+				await ReconnectModulesAsync();
+				Thread.Sleep(250);
 			}
 		}
 
-		private void ReportStatus() {
-			_logger.LogInformation("Status report");
+		private async Task ReconnectModulesAsync() {
+			await Task.WhenAll(_services
+				.OfType<IConnectableService>()
+				.Where(x => x.Connected == false)
+				.Select(x => {
+					try {
+						return x.ConnectAsync(_cancellationToken);
+					}
+					catch (Exception ex) {
+						_logger.LogWarning(ex, "Could not reconnect module");
+						return Task.CompletedTask;
+					}
+				}));
 		}
 
 		//private async Task<bool> PingAsync(IPAddress hostAddress, CancellationToken cancellationToken = default) {

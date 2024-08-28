@@ -32,16 +32,16 @@ namespace RaspberryPi.Common.Gpio {
 			_controller.Write(pinNumber, value);
 		}
 
-		public GpioPin OpenPin(int pinNumber) {
-			return _controller.OpenPin(pinNumber);
+		public IGpioPinProvider OpenPin(int pinNumber) {
+			return new GpioPinProvider(_controller.OpenPin(pinNumber));
 		}
 
-		public GpioPin OpenPin(int pinNumber, PinMode pinMode) {
-			return _controller.OpenPin(pinNumber, pinMode);
+		public IGpioPinProvider OpenPin(int pinNumber, PinMode pinMode) {
+			return new GpioPinProvider(_controller.OpenPin(pinNumber, pinMode));
 		}
 
-		public GpioPin OpenPin(int pinNumber, PinMode pinMode, PinValue initialValue) {
-			return _controller.OpenPin(pinNumber, pinMode, initialValue);
+		public IGpioPinProvider OpenPin(int pinNumber, PinMode pinMode, PinValue initialValue) {
+			return new GpioPinProvider(_controller.OpenPin(pinNumber, pinMode, initialValue));
 		}
 
 		public void ClosePin(int pinNumber) {

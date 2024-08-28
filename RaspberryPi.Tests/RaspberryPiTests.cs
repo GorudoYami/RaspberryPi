@@ -2,8 +2,8 @@
 using Microsoft.Extensions.Options;
 using Moq;
 using NUnit.Framework;
-using RaspberryPi.Common.Modules;
 using RaspberryPi.Common.Protocols;
+using RaspberryPi.Common.Services;
 using RaspberryPi.Options;
 using RaspberryPi.Tests.Common;
 
@@ -18,10 +18,10 @@ public class RaspberryPiTests {
 	private TestLogger<IRaspberryPiModule> _testLogger;
 	private Mock<ICancellationTokenProvider> _mockedCancellationTokenProvider;
 	private Mock<IServerProtocol> _mockedServerProtocol;
-	private Mock<IDrivingModule> _mockedDrivingModule;
-	private Mock<ISensorsModule> _mockedSensorsModule;
-	private Mock<ICameraModule> _mockedCameraModule;
-	private Mock<IServerModule> _mockedServerModule;
+	private Mock<IDrivingService> _mockedDrivingService;
+	private Mock<ISensorService> _mockedSensorService;
+	private Mock<ICameraService> _mockedCameraService;
+	private Mock<ITcpServerService> _mockedTcpServerService;
 
 	public RaspberryPiTests() {
 		_options = new RaspberryPiModuleOptions() {
@@ -37,10 +37,10 @@ public class RaspberryPiTests {
 		_mockedOptions = new Mock<IOptions<RaspberryPiModuleOptions>>();
 		_mockedCancellationTokenProvider = new Mock<ICancellationTokenProvider>();
 		_mockedServerProtocol = new Mock<IServerProtocol>();
-		_mockedDrivingModule = new Mock<IDrivingModule>();
-		_mockedCameraModule = new Mock<ICameraModule>();
-		_mockedSensorsModule = new Mock<ISensorsModule>();
-		_mockedServerModule = new Mock<IServerModule>();
+		_mockedDrivingService = new Mock<IDrivingService>();
+		_mockedCameraService = new Mock<ICameraService>();
+		_mockedSensorService = new Mock<ISensorService>();
+		_mockedTcpServerService = new Mock<ITcpServerService>();
 
 		_raspberryPiModule = null;
 	}
@@ -50,17 +50,18 @@ public class RaspberryPiTests {
 		_testLogger.Dispose();
 	}
 
-	private RaspberryPiModule GetInstance() {
-		return _raspberryPiModule ??= new RaspberryPiModule(
-			_mockedOptions.Object,
-			_testLogger,
-			_mockedCancellationTokenProvider.Object,
-			_mockedServerProtocol.Object,
-			_mockedDrivingModule.Object,
-			_mockedCameraModule.Object,
-			_mockedSensorsModule.Object,
-			_mockedServerModule.Object
-		);
+	private RaspberryPiModule? GetInstance() {
+		//return _raspberryPiModule ??= new RaspberryPiModule(
+		//	_mockedOptions.Object,
+		//	_testLogger,
+		//	_mockedCancellationTokenProvider.Object,
+		//	_mockedServerProtocol.Object,
+		//	_mockedDrivingService.Object,
+		//	_mockedCameraService.Object,
+		//	_mockedSensorService.Object,
+		//	_mockedTcpServerService.Object
+		//);
+		return null;
 	}
 
 	[Test]

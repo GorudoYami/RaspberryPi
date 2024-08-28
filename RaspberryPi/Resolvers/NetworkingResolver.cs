@@ -1,13 +1,13 @@
-﻿using RaspberryPi.Common.Modules;
-using RaspberryPi.Common.Modules.Providers;
-using RaspberryPi.Common.Resolvers;
+﻿using RaspberryPi.Common.Resolvers;
+using RaspberryPi.Common.Services;
+using RaspberryPi.Common.Services.Providers;
 
 namespace RaspberryPi.Resolvers {
 	public class NetworkingResolver : INetworkingResolver {
-		private readonly IModemModule _modemModule;
-		private readonly IClientModule _clientModule;
+		private readonly IModemService _modemModule;
+		private readonly ITcpClientService _clientModule;
 
-		public NetworkingResolver(IModemModule modemModule, IClientModule clientModule) {
+		public NetworkingResolver(IModemService modemModule, ITcpClientService clientModule) {
 			_modemModule = modemModule;
 			_clientModule = clientModule;
 		}

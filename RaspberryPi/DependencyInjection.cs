@@ -2,40 +2,50 @@
 using Microsoft.Extensions.DependencyInjection;
 using RaspberryPi.Camera;
 using RaspberryPi.Camera.Options;
-using RaspberryPi.Common.Modules;
+using RaspberryPi.Common.Extensions;
+using RaspberryPi.Common.Options;
 using RaspberryPi.Common.Protocols;
-using RaspberryPi.Common.Resolvers;
+using RaspberryPi.Common.Providers;
+using RaspberryPi.Common.Services;
 using RaspberryPi.Driving;
 using RaspberryPi.Driving.Options;
+using RaspberryPi.Mqtt;
 using RaspberryPi.Options;
-using RaspberryPi.Resolvers;
 using RaspberryPi.Sensors;
 using RaspberryPi.Sensors.Options;
-using RaspberryPi.Common.Extensions;
-using RaspberryPi.Server;
+using RaspberryPi.TcpServer;
+using System;
 
 namespace RaspberryPi {
 	public static class DependencyInjection {
+		private static bool IsDebug() {
+			return Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") == "Debug";
+		}
+
 		public static IServiceCollection AddResolvers(this IServiceCollection services) {
-			return services
-				.AddSingleton<INetworkingResolver, NetworkingResolver>();
+			if (IsDebug()) {
+				return services
+					.AddSingleton<IVideoDeviceProvider, DebugVideoDeviceProvider>();
+			}
+			else {
+				return services
+					.AddSingleton<IVideoDeviceProvider, VideoDeviceProvider>();
+			}
 		}
 
 		public static IServiceCollection AddProtocols(this IServiceCollection services) {
 			return services
-				.AddSingleton<IClientProtocol, StandardClientProtocol>()
-				.AddSingleton<IServerProtocol, StandardServerProtocol>();
+				.AddSingleton<ICommunicationProtocol, CommunicationProtocol>();
 		}
 
-		public static IServiceCollection AddModules(this IServiceCollection services) {
+		public static IServiceCollection AddServices(this IServiceCollection services) {
 			return services
 				.AddModule<IRaspberryPiModule, RaspberryPiModule>()
-				.AddModule<ICameraModule, CameraModule>()
-				.AddModule<ISensorsModule, SensorsModule>()
-				//.AddModule<IModemModule, ModemModule>()
-				//.AddModule<IModemServerModule, ModemServerModule>()
-				.AddModule<IDrivingModule, DrivingModule>()
-				.AddModule<IServerModule, ServerModule>();
+				.AddModule<ICameraService, CameraService>()
+				.AddModule<ISensorService, SensorService>()
+				.AddModule<IMqttClientService, MqttClientService>()
+				.AddModule<IDrivingService, DrivingService>()
+				.AddModule<ITcpServerService, TcpServerService>();
 		}
 
 		public static IServiceCollection AddOptions(this IServiceCollection services, IConfiguration configuration) {
@@ -46,27 +56,25 @@ namespace RaspberryPi {
 				.ValidateOnStart();
 
 			services
-				.AddOptions<CameraModuleOptions>()
-				.Bind(configuration.GetRequiredSection(nameof(CameraModuleOptions)))
-				.Validate(CameraModuleOptions.Validate)
+				.AddOptions<CameraServiceOptions>()
+				.Bind(configuration.GetRequiredSection(nameof(CameraServiceOptions)))
 				.ValidateOnStart();
 
 			services
-				.AddOptions<SensorsModuleOptions>()
-				.Bind(configuration.GetRequiredSection(nameof(SensorsModuleOptions)))
-				.Validate(SensorsModuleOptions.Validate)
+				.AddOptions<SensorsServiceOptions>()
+				.Bind(configuration.GetRequiredSection(nameof(SensorsServiceOptions)))
+				.Validate(SensorsServiceOptions.Validate)
 				.ValidateOnStart();
 
-			//services
-			//	.AddOptions<ModemModuleOptions>()
-			//	.Bind(configuration.GetRequiredSection(nameof(ModemModuleOptions)))
-			//	.Validate(ModemModuleOptions.Validate)
-			//	.ValidateOnStart();
+			services
+				.AddOptions<DrivingServiceOptions>()
+				.Bind(configuration.GetRequiredSection(nameof(DrivingServiceOptions)))
+				.Validate(DrivingServiceOptions.Validate)
+				.ValidateOnStart();
 
 			services
-				.AddOptions<DrivingModuleOptions>()
-				.Bind(configuration.GetRequiredSection(nameof(DrivingModuleOptions)))
-				.Validate(DrivingModuleOptions.Validate)
+				.AddOptions<VideoDeviceOptions>()
+				.Bind(configuration.GetRequiredSection(nameof(VideoDeviceOptions)))
 				.ValidateOnStart();
 
 			return services;
