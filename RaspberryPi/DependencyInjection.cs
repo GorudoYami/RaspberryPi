@@ -9,7 +9,6 @@ using RaspberryPi.Common.Providers;
 using RaspberryPi.Common.Services;
 using RaspberryPi.Driving;
 using RaspberryPi.Driving.Options;
-using RaspberryPi.Mqtt;
 using RaspberryPi.Options;
 using RaspberryPi.Sensors;
 using RaspberryPi.Sensors.Options;
@@ -43,7 +42,6 @@ namespace RaspberryPi {
 				.AddModule<IRaspberryPiModule, RaspberryPiModule>()
 				.AddModule<ICameraService, CameraService>()
 				.AddModule<ISensorService, SensorService>()
-				.AddModule<IMqttClientService, MqttClientService>()
 				.AddModule<IDrivingService, DrivingService>()
 				.AddModule<ITcpServerService, TcpServerService>();
 		}

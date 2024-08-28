@@ -23,8 +23,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\NET\GorudoYami\GorudoYami.Common\GorudoYami.Common.csproj" />
+    <ProjectReference Include="..\RaspberryPi.Common.Tests\RaspberryPi.Common.Tests.csproj" />
     <ProjectReference Include="..\RaspberryPi.Common\RaspberryPi.Common.csproj" />
-    <ProjectReference Include="..\RaspberryPi.Tests.Common\RaspberryPi.Tests.Common.csproj" />
     <ProjectReference Include="..\RaspberryPi\RaspberryPi.csproj" />
   </ItemGroup>
 

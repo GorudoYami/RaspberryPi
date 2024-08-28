@@ -5,7 +5,7 @@ using NUnit.Framework;
 using RaspberryPi.Common.Protocols;
 using RaspberryPi.Common.Services;
 using RaspberryPi.Options;
-using RaspberryPi.Tests.Common;
+using RasperryPi.Common.Tests;
 
 namespace RaspberryPi.Tests;
 
