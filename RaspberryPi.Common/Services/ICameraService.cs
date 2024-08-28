@@ -1,6 +1,5 @@
-﻿namespace RaspberryPi.Common.Services {
-	public interface ICameraService : IService {
-		void Start();
-		void Stop();
-	}
+﻿namespace RaspberryPi.Common.Services;
+public interface ICameraService : IService {
+	void Start();
+	void Stop();
 }

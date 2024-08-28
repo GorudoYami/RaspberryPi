@@ -15,67 +15,66 @@ using RaspberryPi.Sensors.Options;
 using RaspberryPi.TcpServer;
 using System;
 
-namespace RaspberryPi {
-	public static class DependencyInjection {
-		private static bool IsDebug() {
-			return Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") == "Debug";
-		}
+namespace RaspberryPi;
+public static class DependencyInjection {
+	private static bool IsDebug() {
+		return Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") == "Debug";
+	}
 
-		public static IServiceCollection AddResolvers(this IServiceCollection services) {
-			if (IsDebug()) {
-				return services
-					.AddSingleton<IVideoDeviceProvider, DebugVideoDeviceProvider>();
-			}
-			else {
-				return services
-					.AddSingleton<IVideoDeviceProvider, VideoDeviceProvider>();
-			}
-		}
-
-		public static IServiceCollection AddProtocols(this IServiceCollection services) {
+	public static IServiceCollection AddResolvers(this IServiceCollection services) {
+		if (IsDebug()) {
 			return services
-				.AddSingleton<ICommunicationProtocol, CommunicationProtocol>();
+				.AddSingleton<IVideoDeviceProvider, DebugVideoDeviceProvider>();
 		}
-
-		public static IServiceCollection AddServices(this IServiceCollection services) {
+		else {
 			return services
-				.AddModule<IRaspberryPiModule, RaspberryPiModule>()
-				.AddModule<ICameraService, CameraService>()
-				.AddModule<ISensorService, SensorService>()
-				.AddModule<IDrivingService, DrivingService>()
-				.AddModule<ITcpServerService, TcpServerService>();
+				.AddSingleton<IVideoDeviceProvider, VideoDeviceProvider>();
 		}
+	}
 
-		public static IServiceCollection AddOptions(this IServiceCollection services, IConfiguration configuration) {
-			services
-				.AddOptions<RaspberryPiModuleOptions>()
-				.Bind(configuration.GetRequiredSection(nameof(RaspberryPiModuleOptions)))
-				.Validate(RaspberryPiModuleOptions.Validate)
-				.ValidateOnStart();
+	public static IServiceCollection AddProtocols(this IServiceCollection services) {
+		return services
+			.AddSingleton<ICommunicationProtocol, CommunicationProtocol>();
+	}
 
-			services
-				.AddOptions<CameraServiceOptions>()
-				.Bind(configuration.GetRequiredSection(nameof(CameraServiceOptions)))
-				.ValidateOnStart();
+	public static IServiceCollection AddServices(this IServiceCollection services) {
+		return services
+			.AddModule<IRaspberryPiModule, RaspberryPiModule>()
+			.AddModule<ICameraService, CameraService>()
+			.AddModule<ISensorService, SensorService>()
+			.AddModule<IDrivingService, DrivingService>()
+			.AddModule<ITcpServerService, TcpServerService>();
+	}
 
-			services
-				.AddOptions<SensorsServiceOptions>()
-				.Bind(configuration.GetRequiredSection(nameof(SensorsServiceOptions)))
-				.Validate(SensorsServiceOptions.Validate)
-				.ValidateOnStart();
+	public static IServiceCollection AddOptions(this IServiceCollection services, IConfiguration configuration) {
+		services
+			.AddOptions<RaspberryPiModuleOptions>()
+			.Bind(configuration.GetRequiredSection(nameof(RaspberryPiModuleOptions)))
+			.Validate(RaspberryPiModuleOptions.Validate)
+			.ValidateOnStart();
 
-			services
-				.AddOptions<DrivingServiceOptions>()
-				.Bind(configuration.GetRequiredSection(nameof(DrivingServiceOptions)))
-				.Validate(DrivingServiceOptions.Validate)
-				.ValidateOnStart();
+		services
+			.AddOptions<CameraServiceOptions>()
+			.Bind(configuration.GetRequiredSection(nameof(CameraServiceOptions)))
+			.ValidateOnStart();
 
-			services
-				.AddOptions<VideoDeviceOptions>()
-				.Bind(configuration.GetRequiredSection(nameof(VideoDeviceOptions)))
-				.ValidateOnStart();
+		services
+			.AddOptions<SensorsServiceOptions>()
+			.Bind(configuration.GetRequiredSection(nameof(SensorsServiceOptions)))
+			.Validate(SensorsServiceOptions.Validate)
+			.ValidateOnStart();
 
-			return services;
-		}
+		services
+			.AddOptions<DrivingServiceOptions>()
+			.Bind(configuration.GetRequiredSection(nameof(DrivingServiceOptions)))
+			.Validate(DrivingServiceOptions.Validate)
+			.ValidateOnStart();
+
+		services
+			.AddOptions<VideoDeviceOptions>()
+			.Bind(configuration.GetRequiredSection(nameof(VideoDeviceOptions)))
+			.ValidateOnStart();
+
+		return services;
 	}
 }

@@ -2,24 +2,23 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace RaspberryPi.Sensors.Options {
-	public class SensorsServiceOptions {
-		public int PoolingPeriod { get; set; }
-		public int ReportDistance { get; set; }
-		public ICollection<Sensor> Sensors { get; set; }
+namespace RaspberryPi.Sensors.Options;
+public class SensorsServiceOptions {
+	public int PoolingPeriod { get; set; }
+	public int ReportDistance { get; set; }
+	public ICollection<Sensor> Sensors { get; set; }
 
-		public static bool Validate(SensorsServiceOptions options) {
-			if (options.Sensors.GroupBy(x => x.Name).Any(x => x.Count() > 1)) {
+	public static bool Validate(SensorsServiceOptions options) {
+		if (options.Sensors.GroupBy(x => x.Name).Any(x => x.Count() > 1)) {
+			return false;
+		}
+
+		foreach (Sensor sensor in options.Sensors) {
+			if (sensor.Pins.Keys.Count < 2) {
 				return false;
 			}
-
-			foreach (Sensor sensor in options.Sensors) {
-				if (sensor.Pins.Keys.Count < 2) {
-					return false;
-				}
-			}
-
-			return true;
 		}
+
+		return true;
 	}
 }
