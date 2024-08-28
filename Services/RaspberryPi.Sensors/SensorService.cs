@@ -6,13 +6,8 @@ using RaspberryPi.Common.Services;
 using RaspberryPi.Sensors.Enums;
 using RaspberryPi.Sensors.Models;
 using RaspberryPi.Sensors.Options;
-using System;
-using System.Collections.Generic;
 using System.Device.Gpio;
 using System.Diagnostics;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace RaspberryPi.Sensors;
 
@@ -24,13 +19,13 @@ public class SensorService(
 	public bool Enabled { get; private set; }
 	public bool IsInitialized { get; private set; }
 
-	public event EventHandler<SensorTriggeredEventArgs> SensorTriggered;
+	public event EventHandler<SensorTriggeredEventArgs>? SensorTriggered;
 
 	private readonly ICollection<Sensor> _sensors = options.Value.Sensors;
 	private readonly int _reportDistance = options.Value.ReportDistance;
 	private readonly int _poolingPeriodSeconds = options.Value.PoolingPeriod;
-	private CancellationTokenSource _cancellationTokenSource;
-	private Task _mainTask;
+	private CancellationTokenSource? _cancellationTokenSource;
+	private Task? _mainTask;
 
 	public Task InitializeAsync(CancellationToken cancellationToken = default) {
 		return Task.Run(() => {

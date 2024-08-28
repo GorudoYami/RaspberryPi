@@ -26,10 +26,10 @@ public class DrivingService(
 
 	private readonly DrivingServiceOptions _options = options.Value;
 	private readonly Dictionary<Direction, IPwmChannelProvider> _pwmChannels = [];
-	private double _turnPower = 0;
-	private double _drivePower = 0;
-	private Direction? _turnDirection = null;
-	private Direction? _driveDirection = null;
+	private double _turnPower;
+	private double _drivePower;
+	private Direction? _turnDirection;
+	private Direction? _driveDirection;
 
 	public Task InitializeAsync(CancellationToken cancellationToken = default) {
 		return Task.Run(() => {

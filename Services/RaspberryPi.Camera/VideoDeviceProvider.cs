@@ -8,7 +8,7 @@ using System;
 namespace RaspberryPi.Camera;
 
 public class VideoDeviceProvider : IVideoDeviceProvider, IDisposable {
-	public event EventHandler<VideoDeviceImageCapturedEventArgs> ImageCaptured;
+	public event EventHandler<VideoDeviceImageCapturedEventArgs>? ImageCaptured;
 
 	private readonly VideoDevice _videoDevice;
 
@@ -19,10 +19,7 @@ public class VideoDeviceProvider : IVideoDeviceProvider, IDisposable {
 	}
 
 	private void OnNewImageBufferReady(object sender, NewImageBufferReadyEventArgs e) {
-		ImageCaptured?.Invoke(sender, new VideoDeviceImageCapturedEventArgs() {
-			Buffer = e.ImageBuffer,
-			Length = e.Length
-		});
+		ImageCaptured?.Invoke(sender, new VideoDeviceImageCapturedEventArgs(e.ImageBuffer, e.Length));
 	}
 
 	public void StartCaptureContinuous() {

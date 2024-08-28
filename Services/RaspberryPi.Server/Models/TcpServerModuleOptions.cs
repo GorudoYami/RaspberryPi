@@ -2,8 +2,8 @@
 
 namespace RaspberryPi.TcpServer.Models;
 public class TcpServerModuleOptions : IServiceOptions {
-	public bool Enabled { get; set; }
-	public string Host { get; set; }
-	public int MainPort { get; set; }
-	public int VideoPort { get; set; }
+	public bool Enabled { get; init; }
+	public required string Host { get; init; }
+	public int MainPort { get; init; }
+	public int VideoPort { get; init; }
 }

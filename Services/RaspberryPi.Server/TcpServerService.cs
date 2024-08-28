@@ -4,16 +4,12 @@ using RaspberryPi.Common.Protocols;
 using RaspberryPi.Common.Services;
 using RaspberryPi.Common.Utilities;
 using RaspberryPi.TcpServer.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace RaspberryPi.TcpServer;
+
 public class TcpServerService(
 	IOptions<TcpServerModuleOptions> options,
 	ILogger<ITcpServerService> logger,
@@ -23,9 +19,9 @@ public class TcpServerService(
 
 	private readonly Dictionary<IPAddress, TcpClientInfo> _clients = [];
 	private readonly TcpListener _listener = new(Networking.GetAddressFromHostname(options.Value.Host), options.Value.MainPort);
-	private CancellationTokenSource _cancellationTokenSource;
-	private Task _listenTask;
-	private Task _readMessagesTask;
+	private CancellationTokenSource? _cancellationTokenSource;
+	private Task? _listenTask;
+	private Task? _readMessagesTask;
 
 	public void Start() {
 		_cancellationTokenSource ??= new CancellationTokenSource();
@@ -44,7 +40,7 @@ public class TcpServerService(
 			_cancellationTokenSource?.Cancel();
 			_listener.Stop();
 			await _listenTask;
-			await _readMessagesTask;
+			await _readMessagesTask!;
 		}
 		finally {
 			Cleanup();
@@ -62,8 +58,8 @@ public class TcpServerService(
 	}
 
 	private void CleanupClient(IPAddress address, bool remove = false) {
-		if (_clients.TryGetValue(address, out TcpClientInfo value)) {
-			value.Dispose();
+		if (_clients.TryGetValue(address, out TcpClientInfo? value)) {
+			value?.Dispose();
 
 			if (remove) {
 				_clients.Remove(address);

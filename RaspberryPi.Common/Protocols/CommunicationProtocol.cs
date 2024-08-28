@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace RaspberryPi.Common.Protocols;
 public class CommunicationProtocol : ICommunicationProtocol {
 	public string Delimiter => "\r\n";
-	public event EventHandler<MessageReceivedEventArgs> MessageReceived;
+	public event EventHandler<MessageReceivedEventArgs>? MessageReceived;
 
 	private readonly List<byte> _messageTypes;
 
@@ -35,9 +35,5 @@ public class CommunicationProtocol : ICommunicationProtocol {
 		}
 
 		MessageReceived?.Invoke(this, new MessageReceivedEventArgs(messageType, messageValue));
-	}
-
-	private void ProcessMessage() {
-
 	}
 }

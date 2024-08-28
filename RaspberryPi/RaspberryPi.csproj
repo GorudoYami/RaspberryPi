@@ -3,6 +3,42 @@
   <PropertyGroup>
     <TargetFramework>net8</TargetFramework>
     <Platforms>AnyCPU;ARM32;ARM64</Platforms>
+    <OutputType>Exe</OutputType>
+    <Nullable>annotations</Nullable>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <WarningLevel>9999</WarningLevel>
+    <NoWarn>1701;1702;CS1591;CA1848</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM32'">
+    <WarningLevel>9999</WarningLevel>
+    <NoWarn>1701;1702;CS1591;CA1848</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
+    <WarningLevel>9999</WarningLevel>
+    <NoWarn>1701;1702;CS1591;CA1848</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <WarningLevel>9999</WarningLevel>
+    <NoWarn>1701;1702;CS1591;CA1848</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM32'">
+    <WarningLevel>9999</WarningLevel>
+    <NoWarn>1701;1702;CS1591;CA1848</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+    <WarningLevel>9999</WarningLevel>
+    <NoWarn>1701;1702;CS1591;CA1848</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

@@ -1,12 +1,11 @@
 ﻿using GorudoYami.Common.Streams;
-using System;
 using System.Net.Sockets;
-using System.Threading.Tasks;
 
 namespace RaspberryPi.TcpServer.Models;
+
 public class TcpClientInfo : IDisposable, IAsyncDisposable {
 	public TcpClient Client { get; }
-	public NetworkStream Stream => Client?.GetStream();
+	public NetworkStream Stream => Client.GetStream();
 
 	public ByteStreamReaderWriter IO { get; }
 
@@ -15,7 +14,7 @@ public class TcpClientInfo : IDisposable, IAsyncDisposable {
 		IO = new ByteStreamReaderWriter(Stream, firstDelimiter: delimiter[0], secondDelimiter: GetSecondCharacter(delimiter));
 	}
 
-	private char? GetSecondCharacter(string delimiter) {
+	private static char? GetSecondCharacter(string delimiter) {
 		if (delimiter.Length > 1) {
 			return delimiter[1];
 		}

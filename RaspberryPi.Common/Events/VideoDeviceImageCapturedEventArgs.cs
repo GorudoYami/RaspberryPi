@@ -1,5 +1,6 @@
 ﻿namespace RaspberryPi.Common.Events;
-public class VideoDeviceImageCapturedEventArgs {
-	public byte[] Buffer { get; set; }
-	public int Length { get; set; }
+
+public class VideoDeviceImageCapturedEventArgs(byte[] buffer, int length) : EventArgs {
+	public byte[] Buffer { get; } = buffer;
+	public int Length { get; } = length;
 }

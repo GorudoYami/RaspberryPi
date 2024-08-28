@@ -11,7 +11,7 @@ namespace RaspberryPi.Common.Gpio;
 
 public class DebugGpioControllerProvider(ILogger<IGpioControllerProvider> logger)
 	: IGpioControllerProvider {
-	private class DebugPin(PinMode mode = PinMode.Output, PinValue? value = null) {
+	private sealed class DebugPin(PinMode mode = PinMode.Output, PinValue? value = null) {
 		public PinMode Mode { get; } = mode;
 		public PinValue Value { get; set; } = value ?? PinValue.Low;
 	}

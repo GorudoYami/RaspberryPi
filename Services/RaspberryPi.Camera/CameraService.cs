@@ -30,7 +30,7 @@ public class CameraService : ICameraService {
 		_videoDeviceProvider.ImageCaptured += OnImageCaptured;
 	}
 
-	private async void OnImageCaptured(object sender, VideoDeviceImageCapturedEventArgs e) {
+	private async void OnImageCaptured(object? sender, VideoDeviceImageCapturedEventArgs e) {
 		try {
 			await _tcpServerService.BroadcastAsync(e.Buffer.Take(e.Length).ToArray());
 		}
