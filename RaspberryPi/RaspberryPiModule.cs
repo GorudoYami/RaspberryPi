@@ -5,16 +5,11 @@ using RaspberryPi.Common.Events;
 using RaspberryPi.Common.Protocols;
 using RaspberryPi.Common.Services;
 using RaspberryPi.Options;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace RaspberryPi;
 
 public class RaspberryPiModule(
-	IOptions<RaspberryPiModuleOptions> options,
+	IOptions<RaspberryPiOptions> options,
 	ILogger<IRaspberryPiModule> logger,
 	IEnumerable<IService> services,
 	ICancellationTokenProvider cancellationTokenProvider,
@@ -25,7 +20,7 @@ public class RaspberryPiModule(
 	ITcpServerService tcpServerService) : IRaspberryPiModule {
 	public bool Enabled => true;
 
-	private readonly RaspberryPiModuleOptions _options = options.Value;
+	private readonly RaspberryPiOptions _options = options.Value;
 	private readonly CancellationToken _cancellationToken = cancellationTokenProvider.GetToken();
 
 	public async Task InitializeAsync(CancellationToken cancellationToken = default) {
@@ -85,13 +80,13 @@ public class RaspberryPiModule(
 				sensorService.SensorTriggered += OnSensorTriggered;
 				break;
 			case MessageType.CameraEnable:
-				sensorService.Start();
+				cameraService.Start();
 				break;
 			case MessageType.CameraDisable:
 				cameraService.Stop();
 				break;
 			case MessageType.Unknown:
-				logger.LogError("Unknown message type received ({MessageType}) with value ({MessageValue})", (byte)e.Type, e.Value);
+				logger.LogError("Unknown message type received with value ({MessageValue})", e.Value);
 				break;
 		}
 	}

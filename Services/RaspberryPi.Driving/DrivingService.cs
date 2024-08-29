@@ -17,14 +17,14 @@ using System.Threading.Tasks;
 namespace RaspberryPi.Driving;
 
 public class DrivingService(
-	IOptions<DrivingServiceOptions> options,
+	IOptions<DrivingOptions> options,
 	ILogger<IDrivingService> logger,
 	IGpioControllerProvider controller)
 	: IDrivingService, IDisposable {
 	public bool Enabled => _options.Enabled;
 	public bool IsInitialized { get; private set; }
 
-	private readonly DrivingServiceOptions _options = options.Value;
+	private readonly DrivingOptions _options = options.Value;
 	private readonly Dictionary<Direction, IPwmChannelProvider> _pwmChannels = [];
 	private double _turnPower;
 	private double _drivePower;

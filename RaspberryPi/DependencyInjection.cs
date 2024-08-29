@@ -1,7 +1,9 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using GorudoYami.Common.Asynchronous;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RaspberryPi.Camera;
 using RaspberryPi.Camera.Options;
+using RaspberryPi.Common.Gpio;
 using RaspberryPi.Common.Protocols;
 using RaspberryPi.Common.Providers;
 using RaspberryPi.Common.Services;
@@ -11,23 +13,28 @@ using RaspberryPi.Options;
 using RaspberryPi.Sensors;
 using RaspberryPi.Sensors.Options;
 using RaspberryPi.TcpServer;
+using RaspberryPi.TcpServer.Options;
 using System;
 
 namespace RaspberryPi;
 
 public static class DependencyInjection {
 	private static bool IsDebug() {
-		return Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") == "Debug";
+		return Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT").Equals("DEBUG", StringComparison.OrdinalIgnoreCase);
 	}
 
-	public static IServiceCollection AddResolvers(this IServiceCollection services) {
+	public static IServiceCollection AddProviders(this IServiceCollection services) {
 		if (IsDebug()) {
 			return services
-				.AddSingleton<IVideoDeviceProvider, DebugVideoDeviceProvider>();
+				.AddSingleton<IVideoDeviceProvider, DebugVideoDeviceProvider>()
+				.AddSingleton<ICancellationTokenProvider, CancellationTokenProvider>()
+				.AddSingleton<IGpioControllerProvider, DebugGpioControllerProvider>();
 		}
 		else {
 			return services
-				.AddSingleton<IVideoDeviceProvider, VideoDeviceProvider>();
+				.AddSingleton<IVideoDeviceProvider, VideoDeviceProvider>()
+				.AddSingleton<ICancellationTokenProvider, CancellationTokenProvider>()
+				.AddSingleton<IGpioControllerProvider, GpioControllerProvider>();
 		}
 	}
 
@@ -47,25 +54,25 @@ public static class DependencyInjection {
 
 	public static IServiceCollection AddOptions(this IServiceCollection services, IConfiguration configuration) {
 		services
-			.AddOptions<RaspberryPiModuleOptions>()
-			.Bind(configuration.GetRequiredSection(nameof(RaspberryPiModuleOptions)))
+			.AddOptions<RaspberryPiOptions>()
+			.Bind(configuration.GetRequiredSection(nameof(RaspberryPiOptions)))
 			.ValidateOnStart();
 
 		services
-			.AddOptions<CameraServiceOptions>()
-			.Bind(configuration.GetRequiredSection(nameof(CameraServiceOptions)))
+			.AddOptions<TcpServerOptions>()
+			.Bind(configuration.GetRequiredSection(nameof(TcpServerOptions)))
 			.ValidateOnStart();
 
 		services
-			.AddOptions<SensorsServiceOptions>()
-			.Bind(configuration.GetRequiredSection(nameof(SensorsServiceOptions)))
-			.Validate(SensorsServiceOptions.Validate)
+			.AddOptions<SensorOptions>()
+			.Bind(configuration.GetRequiredSection(nameof(SensorOptions)))
+			.Validate(SensorOptions.Validate)
 			.ValidateOnStart();
 
 		services
-			.AddOptions<DrivingServiceOptions>()
-			.Bind(configuration.GetRequiredSection(nameof(DrivingServiceOptions)))
-			.Validate(DrivingServiceOptions.Validate)
+			.AddOptions<DrivingOptions>()
+			.Bind(configuration.GetRequiredSection(nameof(DrivingOptions)))
+			.Validate(DrivingOptions.Validate)
 			.ValidateOnStart();
 
 		services

@@ -12,7 +12,7 @@ using System.Diagnostics;
 namespace RaspberryPi.Sensors;
 
 public class SensorService(
-	IOptions<SensorsServiceOptions> options,
+	IOptions<SensorOptions> options,
 	ILogger<ISensorService> logger,
 	IGpioControllerProvider controller)
 	: ISensorService, IDisposable, IAsyncDisposable {
@@ -48,7 +48,7 @@ public class SensorService(
 	public void Start() {
 		if (_mainTask != null && _cancellationTokenSource != null) {
 			_cancellationTokenSource = new CancellationTokenSource();
-			_mainTask = Run(_cancellationTokenSource.Token);
+			_mainTask = Task.Run(() => Run(_cancellationTokenSource.Token));
 		}
 	}
 

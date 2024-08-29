@@ -35,11 +35,12 @@ public static class Program {
 			.AddSingleton(configuration)
 			.AddProtocols()
 			.AddServices()
-			.AddOptions()
+			.AddOptions(configuration)
+			.AddProviders()
 			.AddLogging(builder => {
 				builder.ClearProviders();
-				builder.SetMinimumLevel(LogLevel.Debug);
-				builder.AddNLog();
+				builder.SetMinimumLevel(LogLevel.Trace);
+				builder.AddNLog(configuration);
 			});
 
 		return services.BuildServiceProvider();

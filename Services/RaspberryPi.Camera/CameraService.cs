@@ -13,13 +13,13 @@ public class CameraService : ICameraService {
 	public bool Enabled => _options.Enabled;
 	public bool IsInitialized { get; private set; }
 
-	private readonly CameraServiceOptions _options;
+	private readonly CameraOptions _options;
 	private readonly ILogger<ICameraService> _logger;
 	private readonly ITcpServerService _tcpServerService;
 	private readonly IVideoDeviceProvider _videoDeviceProvider;
 
 	public CameraService(
-		IOptions<CameraServiceOptions> options,
+		IOptions<CameraOptions> options,
 		ILogger<ICameraService> logger,
 		ITcpServerService tcpServerService,
 		IVideoDeviceProvider videoDeviceProvider) {

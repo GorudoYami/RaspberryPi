@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "RaspberryPi": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Debug"
+      }
+    }
+  }
+}

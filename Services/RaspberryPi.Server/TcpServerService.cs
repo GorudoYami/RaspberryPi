@@ -4,6 +4,7 @@ using RaspberryPi.Common.Protocols;
 using RaspberryPi.Common.Services;
 using RaspberryPi.Common.Utilities;
 using RaspberryPi.TcpServer.Models;
+using RaspberryPi.TcpServer.Options;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -11,9 +12,9 @@ using System.Text;
 namespace RaspberryPi.TcpServer;
 
 public class TcpServerService(
-	IOptions<TcpServerModuleOptions> options,
+	IOptions<TcpServerOptions> options,
 	ILogger<ITcpServerService> logger,
-	IServerProtocol protocol)
+	ICommunicationProtocol protocol)
 	: ITcpServerService, IDisposable, IAsyncDisposable {
 	public bool Enabled { get; }
 
@@ -28,7 +29,7 @@ public class TcpServerService(
 
 		_listener.Start();
 		_listenTask = ListenAsync(_cancellationTokenSource.Token);
-		_readMessagesTask = ReadMessagesAsync(_cancellationTokenSource.Token);
+		_readMessagesTask = Task.Run(() => ReadMessagesAsync(_cancellationTokenSource.Token));
 	}
 
 	public async Task StopAsync() {
@@ -113,18 +114,26 @@ public class TcpServerService(
 	private async Task ReadMessagesAsync(CancellationToken cancellationToken) {
 		while (cancellationToken.IsCancellationRequested == false) {
 			try {
-				await Task.WhenAll(_clients.Values.Select(x => ReadIncomingMessage(x, cancellationToken)));
+				await Task.WhenAll(_clients.Select(client => ReadIncomingMessage(client.Key, client.Value, cancellationToken)));
+				Thread.Sleep(1);
 			}
 			catch (Exception ex) {
-				logger.LogError(ex, "Error occured while reading messages from clients");
+				logger.LogError(ex, "Error occured while reading messages from clients: {ExceptionMessage}", ex.Message);
 			}
 		}
 	}
 
-	private async Task ReadIncomingMessage(TcpClientInfo clientInfo, CancellationToken cancellationToken) {
+	private async Task ReadIncomingMessage(IPAddress clientAddress, TcpClientInfo clientInfo, CancellationToken cancellationToken) {
+		if (clientInfo.Client.Connected == false) {
+			CleanupClient(clientAddress, true);
+			return;
+		}
+
 		byte[] message = await clientInfo.IO.ReadMessageAsync(cancellationToken);
 
 		if (message?.Length > 0) {
+			string messageStr = $"[{string.Join(", ", message.Select(x => x.ToString(Thread.CurrentThread.CurrentCulture)).ToArray())}]";
+			logger.LogTrace("Received {Message} from client {ClientAddress}", messageStr, clientAddress);
 			protocol.ParseMessage(message);
 		}
 	}

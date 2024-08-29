@@ -2,12 +2,12 @@
 
 namespace RaspberryPi.Sensors.Options;
 
-public class SensorsServiceOptions {
+public class SensorOptions {
 	public required int PoolingPeriod { get; init; }
 	public required int ReportDistance { get; init; }
 	public required ICollection<Sensor> Sensors { get; init; }
 
-	public static bool Validate(SensorsServiceOptions options) {
+	public static bool Validate(SensorOptions options) {
 		if (options.Sensors.GroupBy(x => x.Name).Any(x => x.Count() > 1)) {
 			return false;
 		}

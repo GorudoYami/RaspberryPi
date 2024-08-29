@@ -2,6 +2,6 @@
 
 namespace RaspberryPi.Camera.Options;
 
-public class CameraServiceOptions : IServiceOptions {
+public class CameraOptions : IServiceOptions {
 	public bool Enabled { get; set; }
 }
