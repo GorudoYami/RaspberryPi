@@ -1,51 +1,55 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using RaspberryPi.Camera.Options;
 using RaspberryPi.Common.Events;
 using RaspberryPi.Common.Providers;
 using System.Timers;
 using Timer = System.Timers.Timer;
 
-namespace RaspberryPi.Camera;
+namespace RaspberryPi.Camera {
+	public class DebugVideoDeviceProvider : IVideoDeviceProvider, IDisposable {
+		public event EventHandler<VideoDeviceImageCapturedEventArgs>? ImageCaptured;
 
-public class DebugVideoDeviceProvider : IVideoDeviceProvider, IDisposable {
-	public event EventHandler<VideoDeviceImageCapturedEventArgs>? ImageCaptured;
+		private readonly Timer _timer;
+		private readonly Random _random;
+		private readonly object _lock;
+		private readonly byte[] _buffer;
+		private readonly ILogger<IVideoDeviceProvider> _logger;
 
-	private readonly Timer _timer;
-	private readonly Random _random;
-	private readonly object _lock;
-	private readonly byte[] _buffer;
-
-	public DebugVideoDeviceProvider(IOptions<VideoDeviceOptions> options) {
-		_timer = new Timer();
-		_timer.Elapsed += SendImageCaptured;
-		_lock = new object();
-		_buffer = new byte[options.Value.Width * options.Value.Height];
-		_random = new Random();
-	}
-
-	private void SendImageCaptured(object? sender, ElapsedEventArgs e) {
-		lock (_lock) {
-			_random.NextBytes(_buffer);
-			ImageCaptured?.Invoke(this, new VideoDeviceImageCapturedEventArgs(_buffer, _buffer.Length));
+		public DebugVideoDeviceProvider(ILogger<IVideoDeviceProvider> logger, IOptions<VideoDeviceOptions> options) {
+			_logger = logger;
+			_timer = new Timer(1000);
+			_timer.Elapsed += SendImageCaptured;
+			_lock = new object();
+			_buffer = new byte[options.Value.Width * options.Value.Height];
+			_random = new Random();
 		}
-	}
 
-	public void StartCaptureContinuous() {
-		_timer.Start();
-	}
+		private void SendImageCaptured(object? sender, ElapsedEventArgs e) {
+			lock (_lock) {
+				_random.NextBytes(_buffer);
+				_logger.LogDebug("Simulated capture of {BufferLength} bytes as image", _buffer.Length);
+				ImageCaptured?.Invoke(this, new VideoDeviceImageCapturedEventArgs(_buffer, _buffer.Length));
+			}
+		}
 
-	public void StopCaptureContinuous() {
-		_timer.Stop();
-	}
+		public void StartCaptureContinuous() {
+			_timer.Start();
+		}
 
-	public void Dispose() {
-		GC.SuppressFinalize(this);
-		if (_timer.Enabled) {
+		public void StopCaptureContinuous() {
 			_timer.Stop();
 		}
 
-		lock (_lock) {
-			_timer.Dispose();
+		public void Dispose() {
+			GC.SuppressFinalize(this);
+			if (_timer.Enabled) {
+				_timer.Stop();
+			}
+
+			lock (_lock) {
+				_timer.Dispose();
+			}
 		}
 	}
 }

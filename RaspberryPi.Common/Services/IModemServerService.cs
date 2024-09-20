@@ -1,3 +1,4 @@
-﻿namespace RaspberryPi.Common.Services;
-public interface IModemServerService : IService {
+﻿namespace RaspberryPi.Common.Services {
+	public interface IModemServerService : IService {
+	}
 }

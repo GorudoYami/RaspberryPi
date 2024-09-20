@@ -1,4 +1,5 @@
-﻿namespace RaspberryPi.Common.Services;
-public interface IService {
-	bool Enabled { get; }
+﻿namespace RaspberryPi.Common.Services {
+	public interface IService {
+		bool Enabled { get; }
+	}
 }

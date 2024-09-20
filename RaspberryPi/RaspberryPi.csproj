@@ -1,13 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <Platforms>AnyCPU;ARM32;ARM64</Platforms>
     <OutputType>Exe</OutputType>
-    <Nullable>annotations</Nullable>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
-    <ImplicitUsings>enable</ImplicitUsings>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
   </PropertyGroup>
 
@@ -42,6 +40,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
     <PackageReference Include="NLog" Version="5.3.3" />
@@ -49,7 +48,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\NET\GorudoYami\GorudoYami.Common\GorudoYami.Common.csproj" />
     <ProjectReference Include="..\RaspberryPi.Common\RaspberryPi.Common.csproj" />
     <ProjectReference Include="..\Services\RaspberryPi.Camera\RaspberryPi.Camera.csproj" />
     <ProjectReference Include="..\Services\RaspberryPi.Driving\RaspberryPi.Driving.csproj" />
