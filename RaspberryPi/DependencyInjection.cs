@@ -1,5 +1,4 @@
-﻿using RaspberryPi.Common.Utilities;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RaspberryPi.Camera;
 using RaspberryPi.Camera.Options;
@@ -7,6 +6,7 @@ using RaspberryPi.Common.Gpio;
 using RaspberryPi.Common.Protocols;
 using RaspberryPi.Common.Providers;
 using RaspberryPi.Common.Services;
+using RaspberryPi.Common.Utilities;
 using RaspberryPi.Driving;
 using RaspberryPi.Driving.Options;
 using RaspberryPi.Options;
@@ -14,6 +14,7 @@ using RaspberryPi.Sensors;
 using RaspberryPi.Sensors.Options;
 using RaspberryPi.TcpServer;
 using RaspberryPi.TcpServer.Options;
+using System;
 
 namespace RaspberryPi {
 	public static class DependencyInjection {

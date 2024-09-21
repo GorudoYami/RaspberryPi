@@ -3,16 +3,21 @@ using RaspberryPi.Common.Services;
 using RaspberryPi.Common.Services.Providers;
 
 namespace RaspberryPi.Resolvers {
-	public class MqttResolver(
-		IModemMqttService modemMqttModule,
-		IMqttClientService mqttModule) : IMqttResolver {
+	public class MqttResolver : IMqttResolver {
+		private readonly IModemMqttService _modemMqttModule;
+		private readonly IMqttClientService _mqttClientService;
+
+		public MqttResolver(IModemMqttService modemMqttModule, IMqttClientService mqttClientService) {
+			_modemMqttModule = modemMqttModule;
+			_mqttClientService = mqttClientService;
+		}
 		public IMqttProvider GetMqtt() {
-			if (mqttModule.Connected) {
-				return mqttModule;
+			if (_mqttClientService.Connected) {
+				return _mqttClientService;
 			}
 
-			if (modemMqttModule.Enabled) {
-				return modemMqttModule;
+			if (_modemMqttModule.Enabled) {
+				return _modemMqttModule;
 			}
 
 			return null;

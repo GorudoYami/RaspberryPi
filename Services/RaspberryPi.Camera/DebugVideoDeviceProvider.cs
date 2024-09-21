@@ -3,12 +3,13 @@ using Microsoft.Extensions.Options;
 using RaspberryPi.Camera.Options;
 using RaspberryPi.Common.Events;
 using RaspberryPi.Common.Providers;
+using System;
 using System.Timers;
 using Timer = System.Timers.Timer;
 
 namespace RaspberryPi.Camera {
 	public class DebugVideoDeviceProvider : IVideoDeviceProvider, IDisposable {
-		public event EventHandler<VideoDeviceImageCapturedEventArgs>? ImageCaptured;
+		public event EventHandler<VideoDeviceImageCapturedEventArgs> ImageCaptured;
 
 		private readonly Timer _timer;
 		private readonly Random _random;
@@ -25,7 +26,13 @@ namespace RaspberryPi.Camera {
 			_random = new Random();
 		}
 
-		private void SendImageCaptured(object? sender, ElapsedEventArgs e) {
+		event EventHandler<VideoDeviceImageCapturedEventArgs> IVideoDeviceProvider.ImageCaptured {
+			add => throw new NotImplementedException();
+
+			remove => throw new NotImplementedException();
+		}
+
+		private void SendImageCaptured(object sender, ElapsedEventArgs e) {
 			lock (_lock) {
 				_random.NextBytes(_buffer);
 				_logger.LogDebug("Simulated capture of {BufferLength} bytes as image", _buffer.Length);

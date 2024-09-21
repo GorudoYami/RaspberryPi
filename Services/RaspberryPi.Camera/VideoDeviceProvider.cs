@@ -7,7 +7,7 @@ using System;
 
 namespace RaspberryPi.Camera {
 	public class VideoDeviceProvider : IVideoDeviceProvider, IDisposable {
-		public event EventHandler<VideoDeviceImageCapturedEventArgs>? ImageCaptured;
+		public event EventHandler<VideoDeviceImageCapturedEventArgs> ImageCaptured;
 
 		private readonly VideoDevice _videoDevice;
 

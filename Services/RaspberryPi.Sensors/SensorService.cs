@@ -6,26 +6,36 @@ using RaspberryPi.Common.Services;
 using RaspberryPi.Sensors.Enums;
 using RaspberryPi.Sensors.Models;
 using RaspberryPi.Sensors.Options;
+using System;
+using System.Collections.Generic;
 using System.Device.Gpio;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace RaspberryPi.Sensors {
-	public class SensorService(
-		IOptions<SensorOptions> options,
-		ILogger<ISensorService> logger,
-		IGpioControllerProvider controller)
-		: ISensorService, IDisposable, IAsyncDisposable {
-		public bool Enabled => options.Value.Enabled;
+	public class SensorService
+		: ISensorService, IDisposable {
+		public bool Enabled { get; }
 		public bool IsInitialized { get; private set; }
 
-		public event EventHandler<SensorTriggeredEventArgs>? SensorTriggered;
+		public event EventHandler<SensorTriggeredEventArgs> SensorTriggered;
 
-		private readonly ICollection<Sensor> _sensors = options.Value.Sensors;
-		private readonly int _reportDistance = options.Value.ReportDistance;
-		private readonly int _poolingPeriodSeconds = options.Value.PoolingPeriod;
-		private CancellationTokenSource? _cancellationTokenSource;
-		private Task? _mainTask;
+		private readonly IGpioControllerProvider _controller;
+		private readonly ILogger<ISensorService> _logger;
+		private readonly ICollection<Sensor> _sensors;
+		private readonly int _reportDistance;
+		private CancellationTokenSource _cancellationTokenSource;
+		private Task _mainTask;
+
+		public SensorService(IOptions<SensorOptions> options, ILogger<ISensorService> logger, IGpioControllerProvider controller) {
+			Enabled = options.Value.Enabled;
+			_logger = logger;
+			_controller = controller;
+			_sensors = options.Value.Sensors;
+			_reportDistance = options.Value.ReportDistance;
+		}
 
 		public Task InitializeAsync(CancellationToken cancellationToken = default) {
 			return Task.Run(() => {
@@ -33,13 +43,13 @@ namespace RaspberryPi.Sensors {
 					foreach (int pinNumber in sensor.Pins
 						.Where(x => x.Key == SensorPinType.Echo)
 						.Select(x => x.Value)) {
-						controller.OpenPin(pinNumber, PinMode.Input);
+						_controller.OpenPin(pinNumber, PinMode.Input);
 					}
 
 					foreach (int pinNumber in sensor.Pins
 						.Where(x => x.Key == SensorPinType.Trig)
 						.Select(x => x.Value)) {
-						controller.OpenPin(pinNumber, PinMode.Output);
+						_controller.OpenPin(pinNumber, PinMode.Output);
 					}
 				}
 				IsInitialized = true;
@@ -55,41 +65,47 @@ namespace RaspberryPi.Sensors {
 
 		private async Task Run(CancellationToken cancellationToken) {
 			while (cancellationToken.IsCancellationRequested == false) {
-				await Task.WhenAll(_sensors.Select(sensor => Task.Run(async () => {
-					int distance = await MeasureAsync(sensor, cancellationToken);
+				await Task.WhenAll(_sensors.Select(sensor => Task.Run(() => {
+					int distance = Measure(sensor, cancellationToken);
 
 					if (sensor.IsTriggered() == false && _reportDistance >= distance) {
-						logger.LogDebug("[{SensorName}] Triggered at {Distance}", sensor.Name, distance);
+						_logger.LogDebug("[{SensorName}] Triggered at {Distance}", sensor.Name, distance);
 						sensor.SetTriggered();
 						SensorTriggered?.Invoke(this, new SensorTriggeredEventArgs(sensor.Name, distance));
 					}
 					else if (sensor.IsTriggered() && _reportDistance <= distance) {
-						logger.LogDebug("[{SensorName}] Resetting sensor at {Distance}", sensor.Name, distance);
+						_logger.LogDebug("[{SensorName}] Resetting sensor at {Distance}", sensor.Name, distance);
 						sensor.Reset();
 					}
 				}, cancellationToken)));
 			}
 		}
 
-		private async Task<int> MeasureAsync(Sensor sensor, CancellationToken cancellationToken) {
-			int trigPinNumber = sensor.Pins[SensorPinType.Trig];
-			controller.Write(trigPinNumber, PinValue.High);
-			controller.Write(trigPinNumber, PinValue.Low);
+		private int Measure(Sensor sensor, CancellationToken cancellationToken) {
+			using (var cts = new CancellationTokenSource(500)) {
+				using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, cts.Token)) {
+					int trigPinNumber = sensor.Pins[SensorPinType.Trig];
+					_controller.Write(trigPinNumber, PinValue.High);
+					_controller.Write(trigPinNumber, PinValue.Low);
+					_logger.LogDebug("Sending trig to sensor {SensorName}", sensor.Name);
 
-			int echoPinNumber = sensor.Pins[SensorPinType.Echo];
-			await WaitUntilAsync(() => controller.Read(echoPinNumber), PinValue.High, cancellationToken);
-			var stopwatch = Stopwatch.StartNew();
-			await WaitUntilAsync(() => controller.Read(echoPinNumber), PinValue.Low, cancellationToken);
-			stopwatch.Stop();
+					int echoPinNumber = sensor.Pins[SensorPinType.Echo];
+					WaitUntil(() => _controller.Read(echoPinNumber), PinValue.High, linkedCts.Token);
+					_logger.LogDebug("Echo high for sensor {SensorName}", sensor.Name);
+					var stopwatch = Stopwatch.StartNew();
+					WaitUntil(() => _controller.Read(echoPinNumber), PinValue.Low, linkedCts.Token);
+					_logger.LogDebug("Echo low for sensor {SensorName}", sensor.Name);
+					stopwatch.Stop();
 
-			return (int)Math.Round(stopwatch.Elapsed.TotalMilliseconds * 1000 / 58, 0);
+					int result = (int)Math.Round(stopwatch.Elapsed.TotalMilliseconds * 1000 / 58, 0);
+					_logger.LogDebug("Calculated result distance: {Distance}", result);
+					return result;
+				}
+			}
 		}
 
-		private async Task WaitUntilAsync(Func<PinValue> queryAction, PinValue targetPinValue, CancellationToken cancellationToken) {
-			while (queryAction() != targetPinValue) {
-				if (_poolingPeriodSeconds != 0) {
-					await Task.Delay(_poolingPeriodSeconds * 1000, cancellationToken);
-				}
+		private static void WaitUntil(Func<PinValue> queryAction, PinValue targetPinValue, CancellationToken cancellationToken) {
+			while (queryAction() != targetPinValue && cancellationToken.IsCancellationRequested == false) {
 			}
 		}
 
@@ -111,11 +127,6 @@ namespace RaspberryPi.Sensors {
 		public void Dispose() {
 			GC.SuppressFinalize(this);
 			StopAsync().GetAwaiter().GetResult();
-		}
-
-		public async ValueTask DisposeAsync() {
-			GC.SuppressFinalize(this);
-			await StopAsync();
 		}
 	}
 }

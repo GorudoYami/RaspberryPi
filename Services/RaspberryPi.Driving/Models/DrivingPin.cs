@@ -1,8 +1,13 @@
 ﻿using RaspberryPi.Driving.Enums;
 
 namespace RaspberryPi.Driving.Models {
-	public class DrivingPin(int number, DrivingPinType type) {
-		public int Number { get; } = number;
-		public DrivingPinType Type { get; } = type;
+	public class DrivingPin {
+		public int Number { get; }
+		public DrivingPinType Type { get; }
+
+		public DrivingPin(int number, DrivingPinType type) {
+			Number = number;
+			Type = type;
+		}
 	}
 }

@@ -7,42 +7,59 @@ using RaspberryPi.Driving.Enums;
 using RaspberryPi.Driving.Exceptions;
 using RaspberryPi.Driving.Models;
 using RaspberryPi.Driving.Options;
+using System;
+using System.Collections.Generic;
 using System.Device.Gpio;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace RaspberryPi.Driving {
-	public class DrivingService(
-		IOptions<DrivingOptions> options,
-		ILogger<IDrivingService> logger,
-		IGpioControllerProvider controller)
+	public class DrivingService
 		: IDrivingService, IDisposable {
 		public bool Enabled => _options.Enabled;
 		public bool IsInitialized { get; private set; }
 
-		private readonly DrivingOptions _options = options.Value;
-		private readonly Dictionary<DrivingPinType, IPwmChannelProvider> _pwmChannels = [];
+		private readonly ILogger<IDrivingService> _logger;
+		private readonly DrivingOptions _options;
+		private readonly IGpioControllerProvider _controller;
+		private readonly Dictionary<DrivingPinType, IPwmChannelProvider> _pwmChannels = new Dictionary<DrivingPinType, IPwmChannelProvider>();
 		private double _turnPower;
 		private double _drivePower;
 		private Direction? _turnDirection;
 		private Direction? _driveDirection;
 
+		public DrivingService(IOptions<DrivingOptions> options, ILogger<IDrivingService> logger, IGpioControllerProvider controller) {
+			_logger = logger;
+			_options = options.Value;
+			_controller = controller;
+		}
+
 		public Task InitializeAsync(CancellationToken cancellationToken = default) {
-			return Task.Run(() => {
+			return Task.Run(async () => {
 				foreach (DrivingPin pin in _options.Pins) {
-					controller.OpenPin(pin.Number, PinMode.Output);
+					_controller.OpenPin(pin.Number, PinMode.Output);
 				}
 
 				foreach (DrivingPwmPin pwmPin in _options.PwmPins) {
-					IPwmChannelProvider pwmChannel = controller.GetPwmChannel(pwmPin.Chip, pwmPin.Channel, pwmPin.Frequency, 0);
+					IPwmChannelProvider pwmChannel = _controller.GetPwmChannel(pwmPin.Chip, pwmPin.Channel, pwmPin.Frequency, 0);
 					pwmChannel.Start();
 					_pwmChannels.Add(pwmPin.Type, pwmChannel);
 				}
+
+				Left(1);
+				await Task.Delay(2000);
+				Right(1);
+				await Task.Delay(2000);
+				Straight();
+
 				IsInitialized = true;
 			}, cancellationToken);
 		}
 
 		private void Deinitialize() {
 			foreach (DrivingPin pin in _options.Pins) {
-				controller.ClosePin(pin.Number);
+				_controller.ClosePin(pin.Number);
 			}
 
 			foreach (IPwmChannelProvider pwmChannel in _pwmChannels.Values) {
@@ -56,7 +73,7 @@ namespace RaspberryPi.Driving {
 				return;
 			}
 
-			logger.LogDebug("Turning left with {Power} power", power);
+			_logger.LogDebug("Turning left with {Power} power", power);
 			_turnDirection = Direction.Left;
 			_turnPower = power;
 			UpdateTurnPins();
@@ -67,14 +84,14 @@ namespace RaspberryPi.Driving {
 				return;
 			}
 
-			logger.LogDebug("Turning right with {Power} power", power);
+			_logger.LogDebug("Turning right with {Power} power", power);
 			_turnDirection = Direction.Right;
 			_turnPower = power;
 			UpdateTurnPins();
 		}
 
 		public void Straight() {
-			logger.LogDebug("Resetting turn");
+			_logger.LogDebug("Resetting turn");
 			_turnDirection = null;
 			_turnPower = 0;
 			UpdateTurnPins();
@@ -85,7 +102,7 @@ namespace RaspberryPi.Driving {
 				return;
 			}
 
-			logger.LogDebug("Going forward with {Power} power", power);
+			_logger.LogDebug("Going forward with {Power} power", power);
 			_driveDirection = Direction.Forward;
 			_drivePower = power;
 			UpdateDrivePins();
@@ -96,7 +113,7 @@ namespace RaspberryPi.Driving {
 				return;
 			}
 
-			logger.LogDebug("Going back with {Power} power", power);
+			_logger.LogDebug("Going back with {Power} power", power);
 			_driveDirection = Direction.Back;
 			_drivePower = power;
 			UpdateDrivePins();
@@ -108,24 +125,23 @@ namespace RaspberryPi.Driving {
 			_drivePower = 0;
 			_turnPower = 0;
 
-			logger.LogDebug("Stopping");
+			_logger.LogDebug("Stopping");
 			UpdateDrivePins();
 			UpdateTurnPins();
 		}
 
 		private void UpdateTurnPins() {
-			if (_turnDirection == Direction.Left) {
-				_pwmChannels[DrivingPinType.Steering].DutyCycle = 0.5 - (_turnPower * 0.5);
-			}
-			else if (_turnDirection == Direction.Right) {
-				_pwmChannels[DrivingPinType.Steering].DutyCycle = 0.5 + (_turnPower * 0.5);
-			}
-			else if (_turnDirection == null) {
+			if (_turnDirection == null) {
 				_pwmChannels[DrivingPinType.Steering].DutyCycle = 0.5;
 			}
-			else {
-				throw new InvalidOperationException($"Invalid turn direction {_turnDirection}");
+			else if (_turnDirection == Direction.Left) {
+				_pwmChannels[DrivingPinType.Steering].DutyCycle = 1.0;
 			}
+			else if (_turnDirection == Direction.Right) {
+				_pwmChannels[DrivingPinType.Steering].DutyCycle = 0.0;
+			}
+
+			_logger.LogTrace("{DutyCycle}", _pwmChannels[DrivingPinType.Steering].DutyCycle);
 		}
 
 		private void UpdateDrivePins() {
@@ -151,7 +167,7 @@ namespace RaspberryPi.Driving {
 
 		private void Write(DrivingPinType type, PinValue pinValue) {
 			DrivingPin pin = _options.Pins.Single(p => p.Type == type);
-			controller.Write(pin.Number, pinValue);
+			_controller.Write(pin.Number, pinValue);
 		}
 
 		public void Dispose() {

@@ -1,22 +1,18 @@
 ﻿using System;
 
 namespace RaspberryPi.Common.Gpio.Pwm {
-	sealed internal class DebugPwmChannelProvider
+	internal sealed class DebugPwmChannelProvider
 		: IPwmChannelProvider {
 
 		public int Frequency {
-			get {
-				return _frequency;
-			}
+			get => _frequency;
 			set {
 				Console.WriteLine($"Setting {value} Hz on pwm channel {_channel} of chip {_chip}");
 				_frequency = value;
 			}
 		}
 		public double DutyCycle {
-			get {
-				return _dutyCycle;
-			}
+			get => _dutyCycle;
 			set {
 				Console.WriteLine($"Setting {value} duty cycle on pwm channel {_channel} of chip {_chip}");
 				_dutyCycle = value;

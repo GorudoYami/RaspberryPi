@@ -2,29 +2,40 @@
 using Microsoft.Extensions.Options;
 using RaspberryPi.Common.Protocols;
 using RaspberryPi.Common.Services;
-using RaspberryPi.Common.Utilities;
 using RaspberryPi.TcpServer.Models;
 using RaspberryPi.TcpServer.Options;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace RaspberryPi.TcpServer {
-	public class TcpServerService(
-		IOptions<TcpServerOptions> options,
-		ILogger<ITcpServerService> logger,
-		ICommunicationProtocol protocol)
-		: ITcpServerService, IDisposable, IAsyncDisposable {
+	public class TcpServerService
+		: ITcpServerService, IDisposable {
 		public bool Enabled { get; }
 
-		private readonly Dictionary<IPAddress, TcpClientInfo> _clients = [];
-		private readonly TcpListener _listener = new(IPAddress.Any, options.Value.MainPort);
-		private CancellationTokenSource? _cancellationTokenSource;
-		private Task? _listenTask;
-		private Task? _readMessagesTask;
+		private readonly Dictionary<IPAddress, TcpClientInfo> _clients = new Dictionary<IPAddress, TcpClientInfo>();
+		private readonly TcpListener _listener;
+		private readonly ILogger<ITcpServerService> _logger;
+		private readonly ICommunicationProtocol _communicationProtocol;
+		private CancellationTokenSource _cancellationTokenSource;
+		private Task _listenTask;
+		private Task _readMessagesTask;
+
+		public TcpServerService(IOptions<TcpServerOptions> options, ILogger<ITcpServerService> logger, ICommunicationProtocol communicationProtocol) {
+			_listener = new TcpListener(IPAddress.Any, options.Value.MainPort);
+			_logger = logger;
+			_communicationProtocol = communicationProtocol;
+		}
 
 		public void Start() {
-			_cancellationTokenSource ??= new CancellationTokenSource();
+			if (_cancellationTokenSource == null) {
+				_cancellationTokenSource = new CancellationTokenSource();
+			}
 
 			_listener.Start();
 			_listenTask = ListenAsync(_cancellationTokenSource.Token);
@@ -40,7 +51,7 @@ namespace RaspberryPi.TcpServer {
 				_cancellationTokenSource?.Cancel();
 				_listener.Stop();
 				await _listenTask;
-				await _readMessagesTask!;
+				await _readMessagesTask;
 			}
 			finally {
 				Cleanup();
@@ -58,7 +69,7 @@ namespace RaspberryPi.TcpServer {
 		}
 
 		private void CleanupClient(IPAddress address, bool remove = false) {
-			if (_clients.TryGetValue(address, out TcpClientInfo? value)) {
+			if (_clients.TryGetValue(address, out TcpClientInfo value)) {
 				value?.Dispose();
 
 				if (remove) {
@@ -94,17 +105,17 @@ namespace RaspberryPi.TcpServer {
 
 		private async Task ListenAsync(CancellationToken cancellationToken) {
 			while (cancellationToken.IsCancellationRequested == false) {
-				TcpClient client = await _listener.AcceptTcpClientAsync(cancellationToken);
+				TcpClient client = await _listener.AcceptTcpClientAsync();
 				IPAddress clientAddress = (client.Client.RemoteEndPoint as IPEndPoint)?.Address
 					?? throw new InvalidOperationException("Client remote endpoint is invalid");
 
 				if (client.Connected) {
-					logger.LogInformation("Client connected {ClientAddress}", clientAddress);
+					_logger.LogInformation("Client connected {ClientAddress}", clientAddress);
 					try {
-						_clients[clientAddress] = new TcpClientInfo(client, protocol.Delimiter);
+						_clients[clientAddress] = new TcpClientInfo(client, _communicationProtocol.Delimiter);
 					}
 					catch (Exception ex) {
-						logger.LogError(ex, "Communication initialization with client {ClientAddress} failed", clientAddress.ToString());
+						_logger.LogError(ex, "Communication initialization with client {ClientAddress} failed", clientAddress.ToString());
 						CleanupClient(clientAddress, true);
 					}
 				}
@@ -118,7 +129,7 @@ namespace RaspberryPi.TcpServer {
 					await Task.Delay(1, cancellationToken);
 				}
 				catch (Exception ex) {
-					logger.LogError(ex, "Error occured while reading messages from clients: {ExceptionMessage}", ex.Message);
+					_logger.LogError(ex, "Error occured while reading messages from clients: {ExceptionMessage}", ex.Message);
 				}
 			}
 		}
@@ -133,19 +144,14 @@ namespace RaspberryPi.TcpServer {
 
 			if (message?.Length > 0) {
 				string messageStr = $"[{string.Join(", ", message.Select(x => x.ToString(Thread.CurrentThread.CurrentCulture)).ToArray())}]";
-				logger.LogTrace("Received {Message} from client {ClientAddress}", messageStr, clientAddress);
-				protocol.ParseMessage(message);
+				_logger.LogTrace("Received {Message} from client {ClientAddress}", messageStr, clientAddress);
+				_communicationProtocol.ParseMessage(message);
 			}
 		}
 
 		public void Dispose() {
 			GC.SuppressFinalize(this);
 			StopAsync().GetAwaiter().GetResult();
-		}
-
-		public async ValueTask DisposeAsync() {
-			GC.SuppressFinalize(this);
-			await StopAsync();
 		}
 	}
 }

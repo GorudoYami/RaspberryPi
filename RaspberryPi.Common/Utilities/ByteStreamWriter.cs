@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace RaspberryPi.Common.Utilities {
-	public class ByteStreamWriter : IDisposable, IAsyncDisposable {
+	public class ByteStreamWriter : IDisposable {
 		public char FirstDelimiter { get; set; }
 		public char? SecondDelimiter { get; set; }
 		private readonly Stream _stream;
@@ -31,15 +31,6 @@ namespace RaspberryPi.Common.Utilities {
 			if (_leaveOpen == false) {
 				_stream.Dispose();
 			}
-		}
-
-		public async ValueTask DisposeAsync() {
-			GC.SuppressFinalize(this);
-			await Task.Run(() => {
-				if (_leaveOpen == false) {
-					_stream.Dispose();
-				}
-			});
 		}
 	}
 }

@@ -1,10 +1,17 @@
 ﻿using RaspberryPi.Driving.Enums;
 
 namespace RaspberryPi.Driving.Models {
-	public class DrivingPwmPin(int channel, DrivingPinType type, int chip, int frequency) {
-		public int Chip { get; } = chip;
-		public int Frequency { get; } = frequency;
-		public int Channel { get; } = channel;
-		public DrivingPinType Type { get; } = type;
+	public class DrivingPwmPin {
+		public int Chip { get; }
+		public int Frequency { get; }
+		public int Channel { get; }
+		public DrivingPinType Type { get; }
+
+		public DrivingPwmPin(int channel, DrivingPinType type, int chip, int frequency) {
+			Chip = chip;
+			Frequency = frequency;
+			Channel = channel;
+			Type = type;
+		}
 	}
 }

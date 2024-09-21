@@ -4,6 +4,8 @@ using RaspberryPi.Camera.Options;
 using RaspberryPi.Common.Events;
 using RaspberryPi.Common.Providers;
 using RaspberryPi.Common.Services;
+using System;
+using System.Linq;
 
 namespace RaspberryPi.Camera {
 	public class CameraService : ICameraService {
@@ -27,7 +29,7 @@ namespace RaspberryPi.Camera {
 			_videoDeviceProvider.ImageCaptured += OnImageCaptured;
 		}
 
-		private async void OnImageCaptured(object? sender, VideoDeviceImageCapturedEventArgs e) {
+		private async void OnImageCaptured(object sender, VideoDeviceImageCapturedEventArgs e) {
 			try {
 				await _tcpServerService.BroadcastAsync(e.Buffer.Take(e.Length).ToArray());
 			}

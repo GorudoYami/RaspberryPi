@@ -5,6 +5,7 @@ using NLog;
 using NLog.Extensions.Logging;
 using RaspberryPi.Common.Extensions;
 using RaspberryPi.Common.Services;
+using System;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace RaspberryPi {
@@ -13,10 +14,11 @@ namespace RaspberryPi {
 			try {
 				InitializeNlog();
 
-				using ServiceProvider serviceProvide = CreateServiceProvider();
-				IRaspberryPiModule raspberryPi = serviceProvide.GetRequiredService<IRaspberryPiModule>();
+				using (ServiceProvider serviceProvide = CreateServiceProvider()) {
+					IRaspberryPiModule raspberryPi = serviceProvide.GetRequiredService<IRaspberryPiModule>();
 
-				raspberryPi.RunAsync().GetAwaiter().GetResult();
+					raspberryPi.RunAsync().GetAwaiter().GetResult();
+				}
 			}
 			finally {
 				DeinitializeNlog();

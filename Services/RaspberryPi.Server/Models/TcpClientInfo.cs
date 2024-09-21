@@ -1,8 +1,9 @@
 ﻿using RaspberryPi.Common.Utilities;
+using System;
 using System.Net.Sockets;
 
 namespace RaspberryPi.TcpServer.Models {
-	public class TcpClientInfo : IDisposable, IAsyncDisposable {
+	public class TcpClientInfo : IDisposable {
 		public TcpClient Client { get; }
 		public NetworkStream Stream => Client.GetStream();
 
@@ -25,12 +26,6 @@ namespace RaspberryPi.TcpServer.Models {
 			GC.SuppressFinalize(this);
 
 			Client.Dispose();
-		}
-
-		public async ValueTask DisposeAsync() {
-			GC.SuppressFinalize(this);
-			Client.Dispose();
-			await Task.CompletedTask;
 		}
 	}
 }

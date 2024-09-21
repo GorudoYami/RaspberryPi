@@ -1,5 +1,5 @@
-﻿using RaspberryPi.Common.Configuration;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
+using RaspberryPi.Common.Configuration;
 
 namespace RaspberryPi.Common.Extensions {
 	public static class ConfigurationBuilderExtensions {

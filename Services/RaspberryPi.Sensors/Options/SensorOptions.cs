@@ -1,11 +1,13 @@
 ﻿using RaspberryPi.Sensors.Models;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace RaspberryPi.Sensors.Options {
 	public class SensorOptions {
-		public bool Enabled { get; init; }
-		public required int PoolingPeriod { get; init; }
-		public required int ReportDistance { get; init; }
-		public required ICollection<Sensor> Sensors { get; init; }
+		public bool Enabled { get; set; }
+		public int PoolingPeriod { get; set; }
+		public int ReportDistance { get; set; }
+		public ICollection<Sensor> Sensors { get; set; }
 
 		public static bool Validate(SensorOptions options) {
 			if (options.Sensors.GroupBy(x => x.Name).Any(x => x.Count() > 1)) {
